@@ -4,6 +4,15 @@ import "./globals.css";
 import CustomerLayout from "../components/layout/CustomerLayout";
 
 // ... (phần khai báo font và metadata giữ nguyên)
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter", // Tùy chọn, giúp dễ quản lý CSS variable
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+});
 
 export default function RootLayout({
   children,
