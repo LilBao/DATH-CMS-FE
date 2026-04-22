@@ -1,9 +1,9 @@
 "use client"; // Vì dùng useEffect và useState nên phải khai báo đây là Client Component
 
 import React, { useEffect, useState } from "react";
-import { movieService } from "@/services/movie.service";
-import { Movie } from "@/types/movie.type";
-import MovieCard from "@/components/shared/MovieCard"; // Component dùng chung
+import { movieService } from "@/src/services/movies.service";
+import { Movie } from "@/src/types/movie.type";
+import MovieCard from "@/src/components/shared/MoviesCard"; // Component dùng chung
 
 export default function NowShowingSection() {
   const [movies, setMovies] = useState<Movie[]>([]);

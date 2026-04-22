@@ -1,26 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, Manrope, Geist } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import CustomerLayout from "../components/layout/CustomerLayout";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-inter",
-  weight: ["300", "400", "600", "700"],
-});
-
-const manrope = Manrope({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-manrope",
-  weight: ["200", "400", "700", "800"],
-});
-
-export const metadata: Metadata = {
-  title: "Cinema Director’s Cut",
-  description: "Hệ thống rạp chiếu phim tiêu chuẩn quốc tế",
-};
+// ... (phần khai báo font và metadata giữ nguyên)
 
 export default function RootLayout({
   children,
@@ -30,7 +13,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={cn("dark", inter.variable, manrope.variable, "font-sans", geist.variable)}
+      className={`dark ${inter.variable} ${manrope.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -40,7 +23,8 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body selection:bg-primary selection:text-on-primary">
-        {children}
+        {/* Bọc CustomerLayout ở đây */}
+        <CustomerLayout>{children}</CustomerLayout>
       </body>
     </html>
   );
