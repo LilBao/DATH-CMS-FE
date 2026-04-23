@@ -4,7 +4,6 @@ export default function Footer() {
   return (
     <footer className="w-full pt-20 pb-10 bg-[#131313] border-t border-[#e5e2e1]/5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 max-w-7xl mx-auto">
-        {/* About Column */}
         <div className="space-y-6">
           <div className="text-lg font-bold text-[#f5c948]">
             CINEMA DIRECTOR’S CUT
@@ -33,8 +32,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Policies Column */}
-        <div className="space-y-4">
+        <div className="space-x-0 space-y-4">
           <h4 className="text-[#f5c948] font-bold text-sm tracking-widest uppercase mb-6">
             Chính sách
           </h4>
@@ -74,8 +72,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Support Column */}
-        <div className="space-y-4">
+        <div className="space-x-0 space-y-4">
           <h4 className="text-[#f5c948] font-bold text-sm tracking-widest uppercase mb-6">
             Chăm sóc khách hàng
           </h4>
@@ -92,18 +89,15 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* App & Copyright Column */}
-        <div className="space-y-4">
+        <div className="space-x-0 space-y-4">
           <h4 className="text-[#f5c948] font-bold text-sm tracking-widest uppercase mb-6">
             Kết nối
           </h4>
           <div className="flex flex-col space-y-4">
-            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] text-white/50 text-center hover:bg-white/10 transition-all cursor-pointer">
-              TẢI TRÊN APP STORE / GOOGLE PLAY
-            </div>
-            <div className="pt-4 text-center md:text-left">
+            <div className="pt-4">
               <p className="text-[10px] text-[#e5e2e1]/30">
-                © 2026 Cinema Director’s Cut. All Rights Reserved.
+                © 2024 Cinema Director’s Cut. All Rights Reserved. High-End
+                Editorial Experience.
               </p>
             </div>
           </div>

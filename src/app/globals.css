@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,6 +53,34 @@ body {
 }
 
 /* Scrollbar Style */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #131313;
+}
+::-webkit-scrollbar-thumb {
+  background: #353534;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f5c948;
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(28, 27, 27, 0.7);
+    backdrop-filter: blur(20px);
+  }
+}
+
+body {
+  background-color: #131313;
+  color: #e5e2e1;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar giống mẫu HTML */
 ::-webkit-scrollbar {
   width: 8px;
 }

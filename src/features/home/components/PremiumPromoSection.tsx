@@ -3,8 +3,9 @@ import React from "react";
 export default function PremiumPromoSection() {
   return (
     <section className="px-12 py-20 bg-surface-container-low">
+      {/* GRID CHÍNH: Chia 3 cột, độ cao mỗi dòng là 250px */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[250px]">
-        {/* Main Big Card */}
+        {/* KHỐI BÊN TRÁI (Director's Club): Bắt buộc phải có md:col-span-2 và md:row-span-2 */}
         <div className="md:col-span-2 md:row-span-2 glass-card rounded-3xl p-10 flex flex-col justify-end relative overflow-hidden group cursor-pointer">
           <img
             className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000"
@@ -25,7 +26,7 @@ export default function PremiumPromoSection() {
           </div>
         </div>
 
-        {/* Small Card 1 */}
+        {/* KHỐI BÊN PHẢI SỐ 1 (Member Rewards) */}
         <div className="bg-primary/10 border border-primary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-primary/20 transition-colors cursor-pointer">
           <span className="material-symbols-outlined text-primary text-4xl">
             loyalty
@@ -40,7 +41,7 @@ export default function PremiumPromoSection() {
           </div>
         </div>
 
-        {/* Small Card 2 */}
+        {/* KHỐI BÊN PHẢI SỐ 2 (Quick Booking) */}
         <div className="bg-secondary/10 border border-secondary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-secondary/20 transition-colors cursor-pointer">
           <span className="material-symbols-outlined text-secondary text-4xl">
             confirmation_number
