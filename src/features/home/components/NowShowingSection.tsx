@@ -32,7 +32,7 @@ export default function NowShowingSection() {
     };
 
     fetchMovies();
-  }, [activeTab]); // Gọi lại API mỗi khi chuyển tab
+  }, [activeTab]);
 
   return (
     <section className="px-12 py-20 bg-surface">

@@ -10,16 +10,13 @@ import TicketHistory from "./TicketHistory";
 export default function ProfileLayout() {
   const router = useRouter();
 
-  // --- 1. STATES ---
   const [activeTab, setActiveTab] = useState<"INFO" | "HISTORY">("INFO");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Điểm thưởng tính toán từ API
   const [calculatedPoints, setCalculatedPoints] = useState<number>(0);
 
-  // Form States (Thông tin)
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -34,19 +31,16 @@ export default function ProfileLayout() {
     confirmPassword: "",
   });
 
-  // --- 2. GỌI API KHI RENDER (Lấy Profile & Tính điểm) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
 
-        // Gọi song song 2 API: Lấy thông tin user & Lấy lịch sử giao dịch
         const [profileRes, historyRes] = await Promise.all([
           userService.getProfile(),
           checkoutService.getOrderHistory(),
         ]);
 
-        // Xử lý dữ liệu Profile
         if (profileRes.success && profileRes.data) {
           setProfile(profileRes.data);
           setFormData({
@@ -57,11 +51,9 @@ export default function ProfileLayout() {
           });
         }
 
-        // Xử lý tính điểm từ Lịch sử giao dịch
         if (historyRes.success && historyRes.data) {
           const orders = historyRes.data;
 
-          // Tính tổng tiền các đơn hàng (Chỉ tính các đơn đã COMPLETED hoặc UPCOMING, bỏ qua CANCELED nếu có)
           const totalSpent = orders.reduce((sum, order) => {
             if (order.status !== "CANCELED") {
               return sum + (order.totalAmount || 0);
@@ -69,13 +61,11 @@ export default function ProfileLayout() {
             return sum;
           }, 0);
 
-          // Tính điểm: Tổng chi tiêu / 1000 (Làm tròn xuống)
           const points = Math.floor(totalSpent / 1000);
           setCalculatedPoints(points);
         }
       } catch (error) {
         console.error("Lỗi tải dữ liệu Profile:", error);
-        // Có thể token hết hạn, đẩy về login
         router.push("/login");
       } finally {
         setIsLoading(false);
@@ -84,16 +74,13 @@ export default function ProfileLayout() {
     fetchData();
   }, [router]);
 
-  // --- 3. XỬ LÝ LƯU THAY ĐỔI ---
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
-      // 1. Cập nhật thông tin cá nhân
       await userService.updateProfile(formData);
 
-      // 2. Đổi mật khẩu (nếu user có nhập)
       if (passwordData.newPassword) {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
           alert("Mật khẩu xác nhận không khớp!");
@@ -122,7 +109,6 @@ export default function ProfileLayout() {
     }
   };
 
-  // Tính toán % thanh tiến trình thăng hạng (Giả sử 5000 điểm là hạng Premium)
   const targetPoints = 5000;
   const progressPercent = Math.min(
     (calculatedPoints / targetPoints) * 100,

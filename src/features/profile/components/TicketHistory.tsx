@@ -8,7 +8,6 @@ export default function TicketHistory() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"ALL" | "UPCOMING">("ALL");
 
-  // State cho Modal QR
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export default function TicketHistory() {
     fetchHistory();
   }, []);
 
-  // Lọc vé (Giả lập logic: vé "Sắp chiếu" là vé có status = UPCOMING hoặc ngày chiếu > hiện tại)
   const filteredOrders = orders.filter((order) => {
     if (filter === "UPCOMING") return order.status === "UPCOMING";
     return true;
