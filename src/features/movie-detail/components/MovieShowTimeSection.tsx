@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { movieService } from "@/src/services/movies.service";
 import { Showtime } from "@/src/types/movie.type";
+import { useRouter } from "next/navigation";
 
 interface Props {
   movieId: string;
 }
 
 export default function MovieShowtimesSection({ movieId }: Props) {
+  const router = useRouter();
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -130,6 +132,10 @@ export default function MovieShowtimesSection({ movieId }: Props) {
                     <button
                       key={st.timeId}
                       disabled={isPast}
+                      // THÊM SỰ KIỆN CLICK CHUYỂN TRANG VÀO ĐÂY:
+                      onClick={() =>
+                        router.push(`/booking/showtime/${st.timeId}`)
+                      }
                       className={`py-3 rounded-lg text-sm font-bold transition-all ${
                         isPast
                           ? "bg-surface-container-high/40 text-on-surface-variant opacity-30 cursor-not-allowed line-through"
