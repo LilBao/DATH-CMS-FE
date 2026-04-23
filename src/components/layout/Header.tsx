@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export default function Header() {
   return (
@@ -45,9 +46,12 @@ export default function Header() {
             2
           </span>
         </button>
-        <button className="bg-primary text-on-primary px-6 py-2 rounded-full font-label font-bold text-sm tracking-wide hover:opacity-80 transition-all duration-300 scale-95 active:scale-90">
+        <Link
+          href="/login"
+          className="bg-primary text-on-primary px-6 py-2 rounded-full font-label font-bold text-sm tracking-wide hover:opacity-80 transition-all duration-300 scale-95 active:scale-90"
+        >
           Đăng nhập
-        </button>
+        </Link>
       </div>
     </nav>
   );

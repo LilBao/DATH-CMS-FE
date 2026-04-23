@@ -1,20 +1,34 @@
-export interface JwtResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-  userId: string;
+// src/types/auth.type.ts
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  fullName: string;
+  phone: string;
+  dob: string; // Định dạng YYYY-MM-DD
+  gender: string; // MALE, FEMALE, OTHER
+}
+
+export interface User {
+  id: number;
   email: string;
   fullName: string;
   role: string;
-  avatarUrl: string | null;
 }
 
-// Interface dùng chung bọc ngoài mọi API Response từ Spring Boot
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  user: User;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
-  status: number;
   message: string;
   data: T;
-  timestamp: string;
 }
