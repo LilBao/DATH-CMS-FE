@@ -8,8 +8,8 @@ export default function LoginPage() {
       <div className="absolute inset-0 z-0">
         <img
           alt="Cinema Background"
-          className="w-full h-full object-cover opacity-30"
-          src="https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
+          className="w-full h-full object-cover"
+          src="https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"
         />
         <div className="absolute inset-0 bg-[#131313]/60 backdrop-blur-sm"></div>
       </div>

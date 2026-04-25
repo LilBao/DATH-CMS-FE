@@ -1,11 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { checkoutService } from "@/src/services/checkout.service";
-import { ComboItem } from "@/src/types/checkout.type";
+import { FoodDrink, OrderRequest, Coupon, Merchandise, PaymentRequest } from "@/src/types/checkout.type";
 import { Seat } from "@/src/types/booking.type";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+// Import Swiper
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, FreeMode } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/free-mode";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+import { toast } from "sonner";
 
 export default function CheckoutLayout() {
   const router = useRouter();
@@ -19,80 +29,144 @@ export default function CheckoutLayout() {
     showtimeInfo?: string;
   } | null>(null);
 
-  const [combos, setCombos] = useState<ComboItem[]>([
-    {
-      id: 1,
-      name: "Director's Solo Combo",
-      description: "1 Bắp L + 1 Nước ngọt L",
-      price: 95000,
-      quantity: 0,
-      imageUrl: "https://i.ibb.co/3pQG6qX/vip-cinema.jpg",
-    },
-    {
-      id: 2,
-      name: "Couple Director's Cut",
-      description: "1 Bắp lớn + 2 Nước ngọt L",
-      price: 145000,
-      quantity: 0,
-      imageUrl: "https://i.ibb.co/3pQG6qX/vip-cinema.jpg",
-    },
-  ]);
+  const [foodDrinks, setFoodDrinks] = useState<FoodDrink[]>([]);
+  const [merchandise, setMerchandise] = useState<Merchandise[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
+  const [couponCode, setCouponCode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("MOMO");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   // --- 2. EFFECTS ---
   useEffect(() => {
-    // Lấy dữ liệu từ bước chọn ghế
+    // 1. Lấy dữ liệu từ bước chọn ghế
     const data = sessionStorage.getItem("booking_temp_data");
     if (data) {
       setBookingData(JSON.parse(data));
     } else {
-      // Nếu không có dữ liệu, quay lại trang chủ
       router.push("/");
     }
+
+    // 2. Lấy danh sách bắp nước & merchandise & coupons
+    const fetchData = async () => {
+      try {
+        const [fdRes, merchRes, couponRes] = await Promise.all([
+          checkoutService.getFoodDrinks(),
+          checkoutService.getMerchandise(),
+          checkoutService.getCoupons(),
+        ]);
+
+        if (fdRes.success) {
+          setFoodDrinks(fdRes.data.map((i) => ({ ...i, selectedQuantity: 0 })));
+        }
+        if (merchRes.success) {
+          setMerchandise(merchRes.data.map((i) => ({ ...i, selectedQuantity: 0 })));
+        }
+        if (couponRes.success) {
+          setCoupons(couponRes.data.filter((c) => c.isActive));
+        }
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+      }
+    };
+    fetchData();
   }, [router]);
 
   // --- 3. LOGIC HANDLERS ---
-  const updateComboQty = (id: number, delta: number) => {
-    setCombos((prev) =>
-      prev.map((c) => {
-        if (c.id === id) {
-          return { ...c, quantity: Math.max(0, c.quantity + delta) };
-        }
-        return c;
-      }),
-    );
+  const updateItemQty = (productId: number, delta: number, type: "FD" | "MERCH") => {
+    if (type === "FD") {
+      setFoodDrinks((prev) =>
+        prev.map((item) =>
+          item.productId === productId
+            ? { ...item, selectedQuantity: Math.max(0, (item.selectedQuantity || 0) + delta) }
+            : item,
+        ),
+      );
+    } else {
+      setMerchandise((prev) =>
+        prev.map((item) =>
+          item.productId === productId
+            ? { ...item, selectedQuantity: Math.max(0, (item.selectedQuantity || 0) + delta) }
+            : item,
+        ),
+      );
+    }
   };
 
-  const combosTotal = combos.reduce((sum, c) => sum + c.price * c.quantity, 0);
-  const totalAmount = (bookingData?.seatsTotal || 0) + combosTotal;
+  const foodTotal = foodDrinks.reduce(
+    (sum, item) => sum + item.price * (item.selectedQuantity || 0),
+    0,
+  );
+  const merchTotal = merchandise.reduce(
+    (sum, item) => sum + item.price * (item.selectedQuantity || 0),
+    0,
+  );
+
+  const subTotal = (bookingData?.seatsTotal || 0) + foodTotal + merchTotal;
+  const discountAmount = selectedCoupon ? (subTotal * selectedCoupon.saleOff) / 100 : 0;
+  const totalAmount = subTotal - discountAmount;
 
   const handlePayment = async () => {
     if (!bookingData) return;
     setIsProcessing(true);
 
     try {
-      const payload = {
-        showtimeId: Number(bookingData.timeId),
-        seatIds: bookingData.seats.map((s) => s.seatId),
-        combos: combos
-          .filter((c) => c.quantity > 0)
-          .map((c) => ({ comboId: c.id, quantity: c.quantity })),
+      const payload: OrderRequest = {
         paymentMethod: paymentMethod,
-        totalAmount: totalAmount,
+        couponId: selectedCoupon?.couponId,
+        tickets: bookingData.seats.map((s) => ({
+          showtimeId: Number(bookingData.timeId),
+          branchId: s.branchId || 1,
+          roomId: s.roomId || 1,
+          sRow: s.sRow,
+          sColumn: s.sColumn,
+          tPrice: s.price,
+        })),
+        addons: [
+          ...foodDrinks
+            .filter((fd) => (fd.selectedQuantity || 0) > 0)
+            .map((fd) => ({
+              productId: fd.productId,
+              pType: fd.pType,
+              pName: fd.pName,
+              quantity: fd.selectedQuantity || 0,
+              price: fd.price,
+            })),
+          ...merchandise
+            .filter((m) => (m.selectedQuantity || 0) > 0)
+            .map((m) => ({
+              productId: m.productId,
+              pType: "MERCHANDISE",
+              pName: m.merchName,
+              quantity: m.selectedQuantity || 0,
+              price: m.price,
+            })),
+        ],
       };
 
-      // Gọi API thực tế tới Spring Boot
-      await checkoutService.createOrder(payload);
+      const res = await checkoutService.createOrder(payload);
 
-      // Xóa dữ liệu tạm sau khi đặt vé thành công
-      sessionStorage.removeItem("booking_temp_data");
-      setIsSuccess(true);
+      if (res.success) {
+        const paymentPayload: PaymentRequest = {
+          orderId: res.data.orderId,
+          amount: totalAmount,
+          paymentMethod: paymentMethod
+        }
+        const resPayment = await checkoutService.createPayment(paymentPayload);
+        if (resPayment.success && resPayment.data.paymentUrl) {
+          // Subscribe SSE trước khi chuyển hướng (hoặc nếu mở tab mới)
+          checkoutService.subscribePaymentStatus(res.data.orderId);
+
+          window.location.href = resPayment.data.paymentUrl;
+        } else {
+          sessionStorage.removeItem("booking_temp_data");
+          router.push(`/checkout/status?status=success&orderId=${res.data.orderId}`);
+        }
+      }
     } catch (error) {
       console.error("Lỗi thanh toán:", error);
-      alert("Đã có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.");
+      toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setIsProcessing(false);
     }
@@ -108,33 +182,6 @@ export default function CheckoutLayout() {
 
   return (
     <main className="pt-24 pb-20 px-4 md:px-8 lg:px-12 max-w-7xl mx-auto min-h-screen bg-background text-on-surface relative">
-      {/* MODAL THÀNH CÔNG */}
-      {isSuccess && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md px-4">
-          <div className="bg-surface-container-low border border-white/10 p-10 rounded-3xl max-w-md w-full text-center shadow-2xl animate-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="material-symbols-outlined text-5xl">
-                check_circle
-              </span>
-            </div>
-            <h2 className="text-2xl font-headline font-black text-white mb-2 uppercase italic tracking-tighter">
-              Thanh Toán Thành Công!
-            </h2>
-            <p className="text-on-surface-variant text-sm mb-8">
-              Cảm ơn bạn đã tin tưởng Director’s Cut. Mã vé điện tử đã được kích
-              hoạt trong hệ thống.
-            </p>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/"
-                className="w-full bg-primary text-on-primary py-4 rounded-full font-bold text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
-              >
-                Quay về trang chủ
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* HEADER PROGRESS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -191,57 +238,226 @@ export default function CheckoutLayout() {
                 Combo Ưu Đãi
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {combos.map((combo) => (
-                <div
-                  key={combo.id}
-                  className="bg-surface-container-low p-4 rounded-xl flex gap-4 transition-all hover:bg-surface-container-high group border border-white/5"
-                >
-                  <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                    <img
-                      src={combo.imageUrl}
-                      alt={combo.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="flex flex-col justify-between flex-grow">
-                    <div>
-                      <h3 className="font-bold text-white leading-tight">
-                        {combo.name}
-                      </h3>
-                      <p className="text-xs text-on-surface-variant mt-1">
-                        {combo.description}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-primary font-bold">
-                        {combo.price.toLocaleString("vi-VN")}đ
-                      </span>
-                      <div className="flex items-center gap-3 bg-surface-container-highest px-2 py-1 rounded-full">
-                        <button
-                          onClick={() => updateComboQty(combo.id, -1)}
-                          className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-primary hover:text-on-primary transition-colors text-white"
-                        >
-                          <span className="material-symbols-outlined text-sm">
-                            remove
+            <div className="pt-2">
+              <Swiper
+                modules={[FreeMode]}
+                spaceBetween={16}
+                slidesPerView="auto"
+                freeMode={true}
+                className="combo-swiper"
+              >
+                {foodDrinks.map((item) => (
+                  <SwiperSlide key={item.productId} className="!w-72">
+                    <div className="bg-surface-container-low p-4 rounded-2xl flex gap-4 transition-all hover:bg-surface-container-high group border border-white/5 h-full">
+                      <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                        {item.imgUrl ? (
+                          <img
+                            src={item.imgUrl}
+                            alt={item.pName}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">
+                            fastfood
                           </span>
-                        </button>
-                        <span className="text-xs font-bold w-4 text-center text-white">
-                          {combo.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateComboQty(combo.id, 1)}
-                          className="w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary hover:opacity-80 transition-all"
-                        >
-                          <span className="material-symbols-outlined text-sm">
-                            add
+                        )}
+                      </div>
+                      <div className="flex flex-col justify-between flex-grow">
+                        <div>
+                          <h3 className="font-bold text-white leading-tight text-sm line-clamp-1">
+                            {item.pName}
+                          </h3>
+                          <p className="text-[10px] text-primary uppercase font-bold tracking-tighter mt-1">
+                            {item.pType}
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-primary font-bold text-sm">
+                            {item.price.toLocaleString("vi-VN")}đ
                           </span>
-                        </button>
+                          <div className="flex items-center gap-3 bg-surface-container-highest px-2 py-1 rounded-full">
+                            <button
+                              onClick={() =>
+                                updateItemQty(item.productId, -1, "FD")
+                              }
+                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-primary hover:text-on-primary transition-colors text-white"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                remove
+                              </span>
+                            </button>
+                            <span className="text-xs font-bold w-4 text-center text-white">
+                              {item.selectedQuantity || 0}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateItemQty(item.productId, 1, "FD")
+                              }
+                              className="w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary hover:opacity-80 transition-all"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                add
+                              </span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          </section>
+
+          {/* Section: Merchandise */}
+          <section>
+            <h2 className="font-headline text-xl font-bold tracking-widest uppercase mb-6 text-white">
+              Vật phẩm lưu niệm
+            </h2>
+            <div className="pt-2">
+              <Swiper
+                modules={[FreeMode]}
+                spaceBetween={16}
+                slidesPerView="auto"
+                freeMode={true}
+                className="merch-swiper"
+              >
+                {merchandise.map((item) => (
+                  <SwiperSlide key={item.productId} className="!w-72">
+                    <div className="bg-surface-container-low p-4 rounded-2xl flex gap-4 transition-all hover:bg-surface-container-high group border border-white/5 h-full">
+                      <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                        {item.imgUrl ? (
+                          <img
+                            src={item.imgUrl}
+                            alt={item.merchName}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">
+                            toy_brick
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col justify-between flex-grow">
+                        <div>
+                          <h3 className="font-bold text-white leading-tight text-sm line-clamp-1">
+                            {item.merchName}
+                          </h3>
+                          <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-tighter mt-1">
+                            Còn lại: {item.availNum}
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-primary font-bold text-sm">
+                            {item.price.toLocaleString("vi-VN")}đ
+                          </span>
+                          <div className="flex items-center gap-3 bg-surface-container-highest px-2 py-1 rounded-full">
+                            <button
+                              onClick={() =>
+                                updateItemQty(item.productId, -1, "MERCH")
+                              }
+                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-primary hover:text-on-primary transition-colors text-white"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                remove
+                              </span>
+                            </button>
+                            <span className="text-xs font-bold w-4 text-center text-white">
+                              {item.selectedQuantity || 0}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateItemQty(item.productId, 1, "MERCH")
+                              }
+                              className="w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary hover:opacity-80 transition-all"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                add
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          </section>
+
+          {/* Section: Coupon */}
+          <section>
+            <h2 className="font-headline text-xl font-bold tracking-widest uppercase mb-6 text-white">
+              Ưu đãi dành cho bạn
+            </h2>
+            <div className="pt-2">
+              <Swiper
+                modules={[FreeMode]}
+                spaceBetween={16}
+                slidesPerView="auto"
+                freeMode={true}
+                className="coupon-swiper"
+              >
+                {coupons.map((coupon) => {
+                  const isSelected =
+                    selectedCoupon?.couponId === coupon.couponId;
+                  return (
+                    <SwiperSlide key={coupon.couponId} className="!w-64">
+                      <div
+                        onClick={() =>
+                          setSelectedCoupon(isSelected ? null : coupon)
+                        }
+                        className={`w-full h-24 rounded-2xl flex items-center cursor-pointer transition-all border-2 relative overflow-hidden ${isSelected
+                          ? "bg-primary border-primary"
+                          : "bg-surface-container-low border-white/10 hover:border-primary/50"
+                          }`}
+                      >
+                        {/* Ticket UI: Left Notch */}
+                        <div className="absolute -left-2 w-4 h-4 rounded-full bg-background"></div>
+                        {/* Ticket UI: Right Notch */}
+                        <div className="absolute -right-2 w-4 h-4 rounded-full bg-background"></div>
+
+                        <div className="flex-grow flex flex-col items-center justify-center px-4 border-r border-dashed border-white/20">
+                          <span
+                            className={`text-2xl font-black ${isSelected ? "text-on-primary" : "text-primary"
+                              }`}
+                          >
+                            {coupon.saleOff}%
+                          </span>
+                          <span
+                            className={`text-[8px] uppercase font-bold tracking-widest ${isSelected
+                              ? "text-on-primary/70"
+                              : "text-on-surface-variant"
+                              }`}
+                          >
+                            Discount
+                          </span>
+                        </div>
+
+                        <div className="px-4 space-y-1">
+                          <p
+                            className={`text-[10px] font-bold ${isSelected ? "text-on-primary" : "text-white"
+                              }`}
+                          >
+                            HSD:{" "}
+                            {new Date(coupon.endDate).toLocaleDateString(
+                              "vi-VN",
+                            )}
+                          </p>
+                          <p
+                            className={`text-[8px] ${isSelected
+                              ? "text-on-primary/80"
+                              : "text-on-surface-variant"
+                              }`}
+                          >
+                            Số lượng còn: {coupon.availNum}
+                          </p>
+                        </div>
+                      </div>
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
             </div>
           </section>
 
@@ -267,11 +483,10 @@ export default function CheckoutLayout() {
               ].map((method) => (
                 <label
                   key={method.id}
-                  className={`flex items-center justify-between p-4 bg-surface-container-low rounded-xl cursor-pointer border-2 transition-all ${
-                    paymentMethod === method.id
-                      ? "border-primary bg-surface-container-high"
-                      : "border-transparent hover:border-primary/30"
-                  }`}
+                  className={`flex items-center justify-between p-4 bg-surface-container-low rounded-xl cursor-pointer border-2 transition-all ${paymentMethod === method.id
+                    ? "border-primary bg-surface-container-high"
+                    : "border-transparent hover:border-primary/30"
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     <div
@@ -323,21 +538,58 @@ export default function CheckoutLayout() {
                 </span>
               </div>
 
-              {combos
-                .filter((c) => c.quantity > 0)
-                .map((c) => (
+              {foodDrinks
+                .filter((fd) => (fd.selectedQuantity || 0) > 0)
+                .map((fd) => (
                   <div
-                    key={c.id}
+                    key={fd.productId}
                     className="flex justify-between animate-in fade-in slide-in-from-right-2"
                   >
                     <span className="w-2/3 truncate">
-                      {c.quantity}x {c.name}
+                      {fd.selectedQuantity}x {fd.pName}
                     </span>
                     <span className="font-semibold text-white">
-                      {(c.price * c.quantity).toLocaleString("vi-VN")}đ
+                      {(fd.price * (fd.selectedQuantity || 0)).toLocaleString(
+                        "vi-VN",
+                      )}
+                      đ
                     </span>
                   </div>
                 ))}
+
+              {merchandise
+                .filter((m) => (m.selectedQuantity || 0) > 0)
+                .map((m) => (
+                  <div
+                    key={m.productId}
+                    className="flex justify-between animate-in fade-in slide-in-from-right-2"
+                  >
+                    <span className="w-2/3 truncate">
+                      {m.selectedQuantity}x {m.merchName}
+                    </span>
+                    <span className="font-semibold text-white">
+                      {(m.price * (m.selectedQuantity || 0)).toLocaleString(
+                        "vi-VN",
+                      )}
+                      đ
+                    </span>
+                  </div>
+                ))}
+            </div>
+
+            <div className="space-y-2 mb-8 border-b border-white/10 pb-8">
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Tạm tính:</span>
+                <span className="text-white font-medium">
+                  {subTotal.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+              {selectedCoupon && (
+                <div className="flex justify-between text-sm text-green-500">
+                  <span>Giảm giá ({selectedCoupon.saleOff}%):</span>
+                  <span>-{discountAmount.toLocaleString("vi-VN")}đ</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 mb-8">
@@ -368,7 +620,7 @@ export default function CheckoutLayout() {
 
             <p className="text-[10px] text-center text-on-surface-variant mt-6 leading-relaxed px-4 italic">
               Bằng việc nhấn Thanh toán, bạn đồng ý với các Điều khoản & Chính
-              sách bảo mật của Cinema Director’s Cut.
+              sách bảo mật của CMS.
             </p>
           </div>
         </aside>

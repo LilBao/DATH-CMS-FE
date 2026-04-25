@@ -1,11 +1,14 @@
 // src/components/shared/MoviesCard.tsx
 import { Movie } from "@/src/types/movie.type";
+import Link from "next/link";
 
 interface MoviesCardProps {
   movie: Movie;
 }
 
 export default function MoviesCard({ movie }: MoviesCardProps) {
+  const status = movie.releaseDate <= new Date().toISOString() ? "NOW_SHOWING" : "COMING_SOON";
+
   return (
     <div className="group relative aspect-[2/3] rounded-xl overflow-hidden bg-surface-container-low shadow-xl cursor-pointer">
       <img
@@ -27,11 +30,13 @@ export default function MoviesCard({ movie }: MoviesCardProps) {
           {movie.mName}
         </h3>
         <p className="text-xs text-on-surface-variant mb-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          {movie.genres?.map((g) => g.genre).join(", ")}
+          {movie.genres?.join(", ")}
         </p>
-        <button className="w-full bg-primary text-on-primary py-3 rounded-lg font-bold text-sm tracking-widest opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-          MUA VÉ
-        </button>
+        <Link href={status === 'NOW_SHOWING' ? `/movie/${movie.slug}` : "#"}>
+          <button className="w-full bg-primary text-on-primary py-3 rounded-lg font-bold text-sm tracking-widest opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+            {status === 'NOW_SHOWING' ? "MUA VÉ" : "SẮP CHIẾU"}
+          </button>
+        </Link>
       </div>
     </div>
   );

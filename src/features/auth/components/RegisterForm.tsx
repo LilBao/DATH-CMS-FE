@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/src/services/auth.service";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function RegisterForm() {
       const response = await authService.register(payload);
 
       if (response && response.success !== false) {
-        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
         router.push("/login");
       }
     } catch (err: any) {

@@ -5,17 +5,17 @@ import { movieService } from "@/src/services/movies.service";
 import { Movie } from "@/src/types/movie.type";
 
 interface Props {
-  movieId: string;
+  slug: string;
 }
 
-export default function MovieHeroSection({ movieId }: Props) {
+export default function MovieHeroSection({ slug }: Props) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const res = await movieService.getMovieById(movieId);
+        const res = await movieService.getMovieBySlug(slug);
         if (res.success) setMovie(res.data);
       } catch (error) {
         console.error("Lỗi tải chi tiết phim:", error);
@@ -24,7 +24,7 @@ export default function MovieHeroSection({ movieId }: Props) {
       }
     };
     fetchMovie();
-  }, [movieId]);
+  }, [slug]);
 
   if (loading)
     return (
@@ -43,7 +43,7 @@ export default function MovieHeroSection({ movieId }: Props) {
         <img
           alt={movie.mName}
           className="w-full h-full object-cover opacity-40 scale-105 blur-sm"
-          src={movie.posterUrl || "https://i.ibb.co/3pQG6qX/vip-cinema.jpg"}
+          src={movie.posterUrl || "https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#131313] from-0% via-[#131313]/80 via-50% to-[#131313]/40 to-100%"></div>
       </div>
@@ -56,7 +56,7 @@ export default function MovieHeroSection({ movieId }: Props) {
                 alt={movie.mName}
                 className="w-full h-full object-cover"
                 src={
-                  movie.posterUrl || "https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
+                  movie.posterUrl || "https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"
                 }
               />
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 cursor-pointer">
@@ -106,10 +106,7 @@ export default function MovieHeroSection({ movieId }: Props) {
                   Diễn viên
                 </p>
                 <p className="text-sm font-semibold text-white">
-                  {movie.actors
-                    ?.slice(0, 3)
-                    .map((a) => a.fullName)
-                    .join(", ") || "Đang cập nhật..."}
+                  {movie?.actors.join(", ") || "Đang cập nhật..."}
                 </p>
               </div>
               <div className="space-y-1">

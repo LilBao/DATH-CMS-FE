@@ -5,6 +5,7 @@ import "./globals.css";
 // Import Header và Footer từ thư mục components
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
+import { Toaster } from "sonner";
 
 // Cấu hình Font chữ
 const manrope = Manrope({
@@ -47,6 +48,8 @@ export default function RootLayout({
         <button className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40">
           <span className="material-symbols-outlined">chat_bubble</span>
         </button>
+
+        <Toaster position="top-right" richColors theme="dark" />
       </body>
     </html>
   );

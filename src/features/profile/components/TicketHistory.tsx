@@ -76,7 +76,7 @@ export default function TicketHistory() {
                   <img
                     src={
                       order.moviePoster ||
-                      "https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
+                      "https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"
                     }
                     alt="Movie Poster"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

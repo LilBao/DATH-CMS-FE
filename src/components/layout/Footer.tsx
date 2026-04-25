@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 max-w-7xl mx-auto">
         <div className="space-y-6">
           <div className="text-lg font-bold text-[#f5c948]">
-            CINEMA DIRECTOR’S CUT
+            CMS
           </div>
           <p className="font-body text-xs text-[#e5e2e1]/60 leading-relaxed">
             Hệ thống rạp chiếu phim tiêu chuẩn quốc tế, mang lại trải nghiệm
@@ -96,7 +96,7 @@ export default function Footer() {
           <div className="flex flex-col space-y-4">
             <div className="pt-4">
               <p className="text-[10px] text-[#e5e2e1]/30">
-                © 2024 Cinema Director’s Cut. All Rights Reserved. High-End
+                © 2024 CMS. All Rights Reserved. High-End
                 Editorial Experience.
               </p>
             </div>

@@ -6,10 +6,10 @@ import { Showtime } from "@/src/types/movie.type";
 import { useRouter } from "next/navigation";
 
 interface Props {
-  movieId: string;
+  slug: string;
 }
 
-export default function MovieShowtimesSection({ movieId }: Props) {
+export default function MovieShowTimesSection({ slug }: Props) {
   const router = useRouter();
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export default function MovieShowtimesSection({ movieId }: Props) {
   useEffect(() => {
     const fetchShowtimes = async () => {
       try {
-        const res = await movieService.getMovieShowtimes(movieId);
+        const res = await movieService.getMovieShowtimes(slug);
         if (res.success && res.data.length > 0) {
           setShowtimes(res.data);
           setSelectedDate(res.data[0].day);
@@ -27,7 +27,7 @@ export default function MovieShowtimesSection({ movieId }: Props) {
       }
     };
     fetchShowtimes();
-  }, [movieId]);
+  }, [slug]);
 
   const uniqueDates = Array.from(new Set(showtimes.map((st) => st.day))).sort();
 
@@ -35,9 +35,11 @@ export default function MovieShowtimesSection({ movieId }: Props) {
 
   const formatGroups = showtimesForDate.reduce(
     (acc, curr) => {
-      const formatName = curr.format?.fName || "Tiêu chuẩn";
+      const formatName = curr.formatName;
+
       if (!acc[formatName]) acc[formatName] = [];
       acc[formatName].push(curr);
+
       return acc;
     },
     {} as Record<string, Showtime[]>,
@@ -72,11 +74,10 @@ export default function MovieShowtimesSection({ movieId }: Props) {
                 <div
                   key={date}
                   onClick={() => setSelectedDate(date)}
-                  className={`flex-shrink-0 w-20 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
-                    isSelected
-                      ? "bg-primary text-on-primary shadow-lg shadow-primary/10"
-                      : "bg-surface-container-low border border-white/5 hover:bg-surface-container-high"
-                  }`}
+                  className={`flex-shrink-0 w-20 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected
+                    ? "bg-primary text-on-primary shadow-lg shadow-primary/10"
+                    : "bg-surface-container-low border border-white/5 hover:bg-surface-container-high"
+                    }`}
                 >
                   <span
                     className={`text-[10px] uppercase font-bold ${isSelected ? "opacity-80" : "text-on-surface-variant"}`}
@@ -129,13 +130,12 @@ export default function MovieShowtimesSection({ movieId }: Props) {
                       onClick={() =>
                         router.push(`/booking/showtime/${st.timeId}`)
                       }
-                      className={`py-3 rounded-lg text-sm font-bold transition-all ${
-                        isPast
-                          ? "bg-surface-container-high/40 text-on-surface-variant opacity-30 cursor-not-allowed line-through"
-                          : formatName.includes("IMAX")
-                            ? "bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary"
-                            : "bg-surface-container-high text-white border border-white/5 hover:bg-primary hover:text-on-primary"
-                      }`}
+                      className={`py-3 rounded-lg text-sm font-bold transition-all ${isPast
+                        ? "bg-surface-container-high/40 text-on-surface-variant opacity-30 cursor-not-allowed line-through"
+                        : formatName.includes("IMAX")
+                          ? "bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary"
+                          : "bg-surface-container-high text-white border border-white/5 hover:bg-primary hover:text-on-primary"
+                        }`}
                     >
                       {timeString}
                     </button>

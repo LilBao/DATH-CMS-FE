@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { bookingService } from "@/src/services/booking.service";
-import { Seat, ShowtimeDetails } from "@/src/types/booking.type";
+import { Seat, ShowtimeDetails, SeatType } from "@/src/types/booking.type";
 
 interface Props {
   timeId: string;
@@ -12,7 +12,6 @@ interface Props {
 export default function SeatSelectionLayout({ timeId }: Props) {
   const router = useRouter();
 
-  // States lưu dữ liệu từ API
   const [showtime, setShowtime] = useState<ShowtimeDetails | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,19 +19,45 @@ export default function SeatSelectionLayout({ timeId }: Props) {
   // State lưu ghế user đang chọn
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
-  // GỌI API KHI COMPONENT RENDER
   useEffect(() => {
     const fetchBookingData = async () => {
       try {
         setLoading(true);
-        // Gọi song song 2 API để tối ưu tốc độ
         const [showtimeRes, seatsRes] = await Promise.all([
           bookingService.getShowtimeDetails(timeId),
           bookingService.getSeatsByShowtime(timeId),
         ]);
 
         if (showtimeRes.success) setShowtime(showtimeRes.data);
-        if (seatsRes.success) setSeats(seatsRes.data);
+        if (seatsRes.success) {
+          // Mapping dữ liệu từ BE sang FE format
+          const mappedSeats = seatsRes.data.map((beSeat: any) => {
+            const rowLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const rowName = rowLetters[beSeat.sRow - 1] || `R${beSeat.sRow}`;
+            const number = beSeat.sColumn.toString();
+
+            // Mapping sType (Tạm giả định: 1: STANDARD, 2: VIP, 3: SWEETBOX)
+            let type: SeatType = "STANDARD";
+            let price = 60000;
+            if (beSeat.sType === 2) {
+              type = "VIP";
+              price = 90000;
+            } else if (beSeat.sType === 3) {
+              type = "SWEETBOX";
+              price = 150000;
+            }
+
+            return {
+              ...beSeat,
+              rowName,
+              number,
+              type,
+              price,
+              sStatus: beSeat.sStatus,
+            };
+          });
+          setSeats(mappedSeats);
+        }
       } catch (error) {
         console.error("Lỗi tải dữ liệu phòng chiếu:", error);
       } finally {
@@ -45,10 +70,10 @@ export default function SeatSelectionLayout({ timeId }: Props) {
 
   // Hàm xử lý khi bấm vào 1 ghế
   const handleToggleSeat = (seat: Seat) => {
-    if (seat.isBooked) return; // Không cho click ghế đã bán
+    if (seat.isBooked || seat.sStatus === false) return; // Không cho click ghế đã bán hoặc bị hỏng
 
     const existingIndex = selectedSeats.findIndex(
-      (s) => s.seatId === seat.seatId,
+      (s) => s.sRow === seat.sRow && s.sColumn === seat.sColumn,
     );
     if (existingIndex >= 0) {
       // Bỏ chọn
@@ -168,7 +193,8 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                       .sort((a, b) => parseInt(a.number) - parseInt(b.number))
                       .map((seat, index) => {
                         const isSelected = selectedSeats.some(
-                          (s) => s.seatId === seat.seatId,
+                          (s) =>
+                            s.sRow === seat.sRow && s.sColumn === seat.sColumn,
                         );
                         const isVIP = seat.type === "VIP";
                         const isSweetbox = seat.type === "SWEETBOX";
@@ -179,23 +205,22 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                           index === 2 || index === groupedSeats[row].length - 3;
 
                         return (
-                          <React.Fragment key={seat.seatId}>
+                          <React.Fragment key={`${seat.sRow}-${seat.sColumn}`}>
                             <div
                               onClick={() => handleToggleSeat(seat)}
                               className={`
                             flex items-center justify-center cursor-pointer transition-all
                             ${isSweetbox ? "w-20 h-8 rounded-md" : "w-8 h-8 rounded-sm text-[8px]"}
-                            ${
-                              seat.isBooked
-                                ? "bg-surface opacity-20 cursor-not-allowed text-transparent"
-                                : isSelected
-                                  ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
-                                  : isSweetbox
-                                    ? "bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40 text-secondary"
-                                    : isVIP
-                                      ? "border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
-                                      : "bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
-                            }
+                            ${seat.isBooked || seat.sStatus === false
+                                  ? "bg-surface opacity-20 cursor-not-allowed text-transparent"
+                                  : isSelected
+                                    ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
+                                    : isSweetbox
+                                      ? "bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40 text-secondary"
+                                      : isVIP
+                                        ? "border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
+                                        : "bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
+                                }
                           `}
                             >
                               {isSweetbox ? (
@@ -296,7 +321,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                 ) : null}
                 {selectedSeats.map((s) => (
                   <span
-                    key={s.seatId}
+                    key={`${s.sRow}-${s.sColumn}`}
                     className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold border border-primary/20"
                   >
                     {s.rowName}

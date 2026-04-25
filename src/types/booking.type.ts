@@ -1,11 +1,16 @@
 export type SeatType = "STANDARD" | "VIP" | "SWEETBOX";
 
 export interface Seat {
-  seatId: number;
+  sRow: number;
+  branchId?: number;
+  roomId?: number;
+  sColumn: number;
   rowName: string; // VD: 'A', 'B'
   number: string; // VD: '1', '2'
   type: SeatType;
-  isBooked: boolean; // Trạng thái đã bán hay chưa (dựa vào bảng Ticket trong BE)
+  sType: number; // Mapping from BE
+  sStatus: boolean; // Trạng thái ghế (hoạt động/không)
+  isBooked: boolean;
   price: number;
 }
 

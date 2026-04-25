@@ -6,6 +6,7 @@ import { userService } from "@/src/services/user.service";
 import { checkoutService } from "@/src/services/checkout.service";
 import { UserProfile } from "@/src/types/user.type";
 import TicketHistory from "./TicketHistory";
+import { toast } from "sonner";
 
 export default function ProfileLayout() {
   const router = useRouter();
@@ -55,8 +56,8 @@ export default function ProfileLayout() {
           const orders = historyRes.data;
 
           const totalSpent = orders.reduce((sum, order) => {
-            if (order.status !== "CANCELED") {
-              return sum + (order.totalAmount || 0);
+            if (order.orderStatus !== "CANCELED") {
+              return sum + (order.total || 0);
             }
             return sum;
           }, 0);
@@ -83,7 +84,7 @@ export default function ProfileLayout() {
 
       if (passwordData.newPassword) {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-          alert("Mật khẩu xác nhận không khớp!");
+          toast.error("Mật khẩu xác nhận không khớp!");
           setIsSaving(false);
           return;
         }
@@ -99,9 +100,9 @@ export default function ProfileLayout() {
         });
       }
 
-      alert("Cập nhật thông tin thành công!");
+      toast.success("Cập nhật thông tin thành công!");
     } catch (error: any) {
-      alert(
+      toast.error(
         error?.message || "Cập nhật thất bại. Vui lòng kiểm tra lại thông tin.",
       );
     } finally {

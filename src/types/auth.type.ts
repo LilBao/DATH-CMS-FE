@@ -2,6 +2,7 @@
 export interface LoginPayload {
   email: string;
   password: string;
+  provider?: string;
 }
 
 export interface RegisterPayload {

@@ -10,6 +10,7 @@ export default function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [provider, setProvider] = useState("LOCAL");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,7 +20,7 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password, provider });
 
       if (response && response.data && response.data.accessToken) {
         setTokens(response.data.accessToken, response.data.refreshToken);

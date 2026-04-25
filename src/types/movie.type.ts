@@ -25,6 +25,7 @@ export interface Movie {
   genres: Genre[];
   actors: Actor[];
   formats: Format[];
+  slug: string;
 }
 
 export interface Showtime {
@@ -32,7 +33,7 @@ export interface Showtime {
   day: string; // "YYYY-MM-DD"
   startTime: string; // "HH:mm:ss"
   endTime: string;
-  format: Format;
+  formatName: string;
   // Giả định BE trả về object thông tin chi nhánh
   screenRoom: {
     roomId: number;

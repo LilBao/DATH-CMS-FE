@@ -49,7 +49,7 @@ export default function Header() {
         href="/"
         className="text-2xl font-black text-[#f5c948] tracking-tighter italic"
       >
-        CINEMA DIRECTOR’S CUT
+        CMS
       </Link>
 
       {/* 2. Menu Điều Hướng */}
