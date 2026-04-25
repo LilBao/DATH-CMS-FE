@@ -212,7 +212,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                             flex items-center justify-center cursor-pointer transition-all
                             ${isSweetbox ? "w-20 h-8 rounded-md" : "w-8 h-8 rounded-sm text-[8px]"}
                             ${seat.isBooked || seat.sStatus === false
-                                  ? "bg-surface opacity-20 cursor-not-allowed text-transparent"
+                                  ? "bg-surface bg-red-500 cursor-not-allowed text-red-500 border border-red-500"
                                   : isSelected
                                     ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
                                     : isSweetbox

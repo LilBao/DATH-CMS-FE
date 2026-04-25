@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { movieService } from "@/src/services/movies.service";
 import { Showtime } from "@/src/types/movie.type";
 import { useRouter } from "next/navigation";
+import { Calendar, MapPin, Ticket } from "lucide-react";
 
 interface Props {
   slug: string;
@@ -13,6 +14,7 @@ export default function MovieShowTimesSection({ slug }: Props) {
   const router = useRouter();
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchShowtimes = async () => {
@@ -33,7 +35,33 @@ export default function MovieShowTimesSection({ slug }: Props) {
 
   const showtimesForDate = showtimes.filter((st) => st.day === selectedDate);
 
-  const formatGroups = showtimesForDate.reduce(
+  const branchesForDate = Array.from(
+    new Map(
+      showtimesForDate.map((st) => [
+        st.branchId,
+        { branchId: st.branchId, branchName: st.branchName },
+      ]),
+    ).values(),
+  );
+
+  useEffect(() => {
+    if (branchesForDate.length > 0) {
+      if (
+        !selectedBranchId ||
+        !branchesForDate.some((b) => b.branchId === selectedBranchId)
+      ) {
+        setSelectedBranchId(branchesForDate[0].branchId);
+      }
+    } else {
+      setSelectedBranchId(null);
+    }
+  }, [selectedDate, branchesForDate]);
+
+  const showtimesForBranch = showtimesForDate.filter(
+    (st) => st.branchId === selectedBranchId,
+  );
+
+  const formatGroups = showtimesForBranch.reduce(
     (acc, curr) => {
       const formatName = curr.formatName;
 
@@ -59,39 +87,79 @@ export default function MovieShowTimesSection({ slug }: Props) {
           </div>
         </div>
 
-        {/* Date Picker */}
-        <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-          {uniqueDates.length === 0 ? (
-            <p className="text-on-surface-variant">
-              Phim hiện chưa có lịch chiếu.
-            </p>
-          ) : (
-            uniqueDates.map((date) => {
-              const isSelected = selectedDate === date;
-              const [year, month, day] = date.split("-");
+        {/* Filter Section */}
+        <div className="space-y-10">
+          {/* Date Picker */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              <Calendar className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                Chọn ngày chiếu
+              </span>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+              {uniqueDates.length === 0 ? (
+                <p className="text-on-surface-variant">
+                  Phim hiện chưa có lịch chiếu.
+                </p>
+              ) : (
+                uniqueDates.map((date) => {
+                  const isSelected = selectedDate === date;
+                  const [year, month, day] = date.split("-");
 
-              return (
-                <div
-                  key={date}
-                  onClick={() => setSelectedDate(date)}
-                  className={`flex-shrink-0 w-20 h-24 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected
-                    ? "bg-primary text-on-primary shadow-lg shadow-primary/10"
-                    : "bg-surface-container-low border border-white/5 hover:bg-surface-container-high"
-                    }`}
-                >
-                  <span
-                    className={`text-[10px] uppercase font-bold ${isSelected ? "opacity-80" : "text-on-surface-variant"}`}
-                  >
-                    Th {month}
-                  </span>
-                  <span
-                    className={`text-2xl font-bold ${isSelected ? "" : "text-white"}`}
-                  >
-                    {day}
-                  </span>
-                </div>
-              );
-            })
+                  return (
+                    <div
+                      key={date}
+                      onClick={() => setSelectedDate(date)}
+                      className={`flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${isSelected
+                        ? "bg-primary text-on-primary shadow-2xl shadow-primary/40 scale-105"
+                        : "bg-surface-container-low border border-white/5 hover:bg-surface-container-high hover:border-white/10"
+                        }`}
+                    >
+                      <span
+                        className={`text-[10px] uppercase font-bold tracking-tighter ${isSelected ? "opacity-80" : "text-on-surface-variant"}`}
+                      >
+                        Th {month}
+                      </span>
+                      <span
+                        className={`text-2xl font-black ${isSelected ? "" : "text-white"}`}
+                      >
+                        {day}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Branch Selector */}
+          {selectedDate && branchesForDate.length > 0 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center gap-2 text-on-surface-variant">
+                <MapPin className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Chọn rạp chiếu
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {branchesForDate.map((branch) => {
+                  const isSelected = selectedBranchId === branch.branchId;
+                  return (
+                    <button
+                      key={branch.branchId}
+                      onClick={() => setSelectedBranchId(branch.branchId)}
+                      className={`px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 border ${isSelected
+                        ? "bg-primary/10 text-primary border-primary shadow-lg shadow-primary/10"
+                        : "bg-surface-container-low text-on-surface-variant border-white/5 hover:border-white/20 hover:text-white"
+                        }`}
+                    >
+                      {branch.branchName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 

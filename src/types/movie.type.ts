@@ -34,14 +34,10 @@ export interface Showtime {
   startTime: string; // "HH:mm:ss"
   endTime: string;
   formatName: string;
-  // Giả định BE trả về object thông tin chi nhánh
-  screenRoom: {
-    roomId: number;
-    roomName: string;
-    branch: {
-      branchId: number;
-      bName: string;
-    };
-  };
+  movieId: number;
+  movieName: string;
+  branchId: number;
+  branchName: string;
+  roomId: number;
   status: string; // SCHEDULED, ONGOING...
 }
