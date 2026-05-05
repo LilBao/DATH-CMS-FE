@@ -74,14 +74,20 @@ export default function Header() {
           Phim
         </Link>
         <Link
-          className="font-headline tracking-widest uppercase text-sm font-bold text-[#e5e2e1] hover:text-[#f5c948] transition-colors"
-          href="#"
+          className={`font-headline tracking-widest uppercase text-sm font-bold transition-colors ${pathname === "/cinemas"
+              ? "text-primary border-b-2 border-primary pb-1"
+              : "text-[#e5e2e1] hover:text-primary"
+            }`}
+          href="/cinemas"
         >
           Hệ thống Rạp Phim
         </Link>
         <Link
-          className="font-headline tracking-widest uppercase text-sm font-bold text-[#e5e2e1] hover:text-[#f5c948] transition-colors"
-          href="#"
+          className={`font-headline tracking-widest uppercase text-sm font-bold transition-colors ${pathname === "/promotions"
+              ? "text-primary border-b-2 border-primary pb-1"
+              : "text-[#e5e2e1] hover:text-primary"
+            }`}
+          href="/promotions"
         >
           Khuyến mãi
         </Link>

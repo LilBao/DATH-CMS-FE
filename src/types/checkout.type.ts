@@ -29,6 +29,24 @@ export interface OrderRequest {
   }[];
 }
 
+export interface TicketResponse {
+  ticketId: number;
+  movieName: string;
+  screenRoomName: string;
+  branchName: string;
+  seatName: string;
+  showtime: string;
+  price: number;
+}
+
+export interface AddonResponse {
+  productId: number;
+  pName: string;
+  quantity: number;
+  price: number;
+  itemType: string;
+}
+
 export interface OrderResponse {
   orderId: number;
   orderTime: string;
@@ -38,6 +56,8 @@ export interface OrderResponse {
   total: number;
   orderStatus: string;
   paymentUrl: string;
+  ticketDetails: TicketResponse[];
+  addonDetails: AddonResponse[];
 }
 
 export interface Coupon {

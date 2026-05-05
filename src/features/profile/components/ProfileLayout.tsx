@@ -243,9 +243,6 @@ export default function ProfileLayout({ initialTab = "INFO" }: ProfileLayoutProp
           </div>
         </aside>
 
-        {/* ================================== */}
-        {/* NỘI DUNG CHÍNH (Đổi tab tự động)   */}
-        {/* ================================== */}
         {activeTab === "INFO" && (
           <section className="lg:col-span-9 animate-in fade-in duration-300">
             <h1 className="font-headline font-black text-4xl italic tracking-tighter text-white uppercase mb-10">

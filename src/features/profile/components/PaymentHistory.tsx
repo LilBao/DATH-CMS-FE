@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { checkoutService } from "@/src/services/checkout.service";
 import { PaymentDetailResponse } from "@/src/types/checkout.type";
+import { useUserStore } from "@/src/store/userStore";
 
 export default function PaymentHistory() {
+  const { user } = useUserStore();
   const [payments, setPayments] = useState<PaymentDetailResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,7 +17,12 @@ export default function PaymentHistory() {
         setLoading(true);
         const res = await checkoutService.getPaymentHistory();
         if (res.success) {
-          setPayments(res.data);
+          const sortedData = [...res.data].sort(
+            (a, b) =>
+              new Date(b.paymentTime).getTime() -
+              new Date(a.paymentTime).getTime()
+          );
+          setPayments(sortedData);
         }
       } catch (error) {
         console.error("Lỗi tải lịch sử thanh toán:", error);
@@ -32,12 +39,12 @@ export default function PaymentHistory() {
       p.orderId.toString().includes(searchTerm)
   );
 
-  const totalSpent = payments.reduce((acc, p) => acc + (p.paymentStatus === "SUCCESS" ? p.amount : 0), 0);
-  const successCount = payments.filter(p => p.paymentStatus === "SUCCESS").length;
+  const totalSpent = payments.reduce((acc, p) => acc + (p.paymentStatus === "COMPLETED" ? p.amount : 0), 0);
+  const successCount = payments.filter(p => p.paymentStatus === "COMPLETED").length;
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case "SUCCESS":
+      case "COMPLETED":
         return {
           label: "Thành công",
           color: "text-green-400 bg-green-400/10 border-green-400/20",
@@ -122,7 +129,7 @@ export default function PaymentHistory() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-purple-400/10 transition-colors"></div>
           <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-2 px-1">Hạng thành viên</p>
           <h3 className="text-3xl font-black font-headline text-purple-400 italic tracking-tight uppercase">
-            Gold
+            {user?.rank || user?.membership?.rank || "Standard"}
           </h3>
           <div className="flex items-center gap-2 mt-4 text-[10px] text-purple-400 font-bold bg-purple-400/10 w-fit px-2 py-1 rounded">
             <span className="material-symbols-outlined text-xs">workspace_premium</span>
@@ -177,7 +184,7 @@ export default function PaymentHistory() {
                       {getPaymentMethodIcon(p.paymentMethod)}
                     </span>
                   </div>
-                  
+
                   {/* Thông tin chính */}
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
