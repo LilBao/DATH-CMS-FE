@@ -7,18 +7,34 @@ export interface Seat {
   sColumn: number;
   rowName: string; // VD: 'A', 'B'
   number: string; // VD: '1', '2'
-  type: SeatType;
   sType: number; // Mapping from BE
   sStatus: boolean; // Trạng thái ghế (hoạt động/không)
   isBooked: boolean;
-  price: number;
+  sPrice: number; // New price field from BE
+}
+
+export interface ScreenRoom {
+  branchId: number;
+  roomId: number;
+  rType: string;
+  rCapacity: number;
+  basePrice: number;
+  totalSeats: number;
 }
 
 export interface ShowtimeDetails {
   timeId: number;
+  movieId: number;
   movieName: string;
+  branchId: number;
   branchName: string;
-  roomName: string;
-  startTime: string; // HH:mm
-  date: string; // DD/MM/YYYY
+  roomId: number;
+  rType: string;
+  rPrice: number;
+  formatName: string;
+  day: string; // "YYYY-MM-DD"
+  date?: string; // Legacy field
+  startTime: string; // HH:mm:ss
+  endTime: string;
+  status: string;
 }

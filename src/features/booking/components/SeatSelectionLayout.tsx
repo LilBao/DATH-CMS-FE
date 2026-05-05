@@ -38,13 +38,10 @@ export default function SeatSelectionLayout({ timeId }: Props) {
 
             // Mapping sType (Tạm giả định: 1: STANDARD, 2: VIP, 3: SWEETBOX)
             let type: SeatType = "STANDARD";
-            let price = 60000;
             if (beSeat.sType === 2) {
               type = "VIP";
-              price = 90000;
             } else if (beSeat.sType === 3) {
               type = "SWEETBOX";
-              price = 150000;
             }
 
             return {
@@ -52,7 +49,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
               rowName,
               number,
               type,
-              price,
+              sPrice: beSeat.sPrice,
               sStatus: beSeat.sStatus,
             };
           });
@@ -97,7 +94,10 @@ export default function SeatSelectionLayout({ timeId }: Props) {
     router.push("/checkout");
   };
 
-  const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
+  const totalPrice = selectedSeats.reduce(
+    (sum, seat) => sum + (showtime?.rPrice || 0) + (seat.sPrice || 0),
+    0,
+  );
 
   // Thuật toán: Nhóm ghế theo Hàng (RowName) để render động
   const groupedSeats = seats.reduce(
@@ -140,8 +140,8 @@ export default function SeatSelectionLayout({ timeId }: Props) {
             {showtime?.movieName || "Đang cập nhật..."}
           </h2>
           <p className="text-[10px] text-on-surface-variant tracking-[0.2em] font-medium uppercase mt-1">
-            {showtime?.branchName} • {showtime?.roomName} •{" "}
-            {showtime?.startTime?.substring(0, 5)}, {showtime?.date}
+            {showtime?.branchName} • Phòng {showtime?.roomId} ({showtime?.rType}) •{" "}
+            {showtime?.startTime?.substring(0, 5)}, {showtime?.day}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -196,8 +196,8 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                           (s) =>
                             s.sRow === seat.sRow && s.sColumn === seat.sColumn,
                         );
-                        const isVIP = seat.type === "VIP";
-                        const isSweetbox = seat.type === "SWEETBOX";
+                        const isVIP = seat.sType === 3;
+                        const isSweetbox = seat.sType === 2;
 
                         // Tính toán tạo khoảng trống lối đi (Thường ở giữa rạp)
                         // Giả sử có 10 ghế 1 hàng, ta tách ở sau ghế số 2 và sau ghế số 8 để có 2 lối đi

@@ -4,25 +4,31 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { userService } from "@/src/services/user.service";
 import { checkoutService } from "@/src/services/checkout.service";
-import { UserProfile } from "@/src/types/user.type";
+import { useUserStore } from "@/src/store/userStore";
 import TicketHistory from "./TicketHistory";
+import PaymentHistory from "./PaymentHistory";
 import { toast } from "sonner";
 
-export default function ProfileLayout() {
-  const router = useRouter();
+interface ProfileLayoutProps {
+  initialTab?: "INFO" | "HISTORY" | "PAYMENTS";
+}
 
-  const [activeTab, setActiveTab] = useState<"INFO" | "HISTORY">("INFO");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+export default function ProfileLayout({ initialTab = "INFO" }: ProfileLayoutProps) {
+  const router = useRouter();
+  const { user: profile, setUser } = useUserStore();
+
+  const [activeTab, setActiveTab] = useState<"INFO" | "HISTORY" | "PAYMENTS">(
+    initialTab,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [calculatedPoints, setCalculatedPoints] = useState<number>(0);
-
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    dob: "",
-    gender: "MALE",
+    name: "",
+    phoneNumber: "",
+    birthday: "",
+    sex: "M" as "M" | "F",
+    avatarUrl: "",
   });
 
   // Form States (Mật khẩu)
@@ -43,27 +49,18 @@ export default function ProfileLayout() {
         ]);
 
         if (profileRes.success && profileRes.data) {
-          setProfile(profileRes.data);
+          setUser(profileRes.data);
           setFormData({
-            fullName: profileRes.data.fullName || "",
-            phone: profileRes.data.phone || "",
-            dob: profileRes.data.dob || "",
-            gender: profileRes.data.gender || "MALE",
+            name: profileRes.data.name || profileRes.data.fullName || "",
+            phoneNumber: profileRes.data.phone || profileRes.data.phone || "",
+            birthday: profileRes.data.birthday || profileRes.data.dob || "",
+            sex: (profileRes.data.gender as any) || "M",
+            avatarUrl: profileRes.data.avatarUrl || "",
           });
         }
 
         if (historyRes.success && historyRes.data) {
-          const orders = historyRes.data;
-
-          const totalSpent = orders.reduce((sum, order) => {
-            if (order.orderStatus !== "CANCELED") {
-              return sum + (order.total || 0);
-            }
-            return sum;
-          }, 0);
-
-          const points = Math.floor(totalSpent / 1000);
-          setCalculatedPoints(points);
+          // Lịch sử đơn hàng được TicketHistory sử dụng
         }
       } catch (error) {
         console.error("Lỗi tải dữ liệu Profile:", error);
@@ -80,7 +77,7 @@ export default function ProfileLayout() {
     setIsSaving(true);
 
     try {
-      await userService.updateProfile(formData);
+      await userService.updateProfile(formData as any);
 
       if (passwordData.newPassword) {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -110,6 +107,7 @@ export default function ProfileLayout() {
     }
   };
 
+  const calculatedPoints = profile?.membership?.points || 0;
   const targetPoints = 5000;
   const progressPercent = Math.min(
     (calculatedPoints / targetPoints) * 100,
@@ -135,9 +133,17 @@ export default function ProfileLayout() {
           <div className="bg-surface-container-low p-8 rounded-xl border border-white/5 shadow-xl">
             <div className="flex flex-col items-center text-center mb-8">
               <div className="relative mb-4 group cursor-pointer">
-                <div className="w-24 h-24 rounded-full bg-surface-container-high flex items-center justify-center text-3xl font-black text-primary ring-4 ring-primary/20 uppercase shadow-lg shadow-primary/10">
-                  {profile?.fullName?.charAt(0) || "U"}
-                </div>
+                {profile?.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.name || profile.fullName}
+                    className="w-24 h-24 rounded-full object-cover ring-4 ring-primary/20 shadow-lg shadow-primary/10"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-surface-container-high flex items-center justify-center text-3xl font-black text-primary ring-4 ring-primary/20 uppercase shadow-lg shadow-primary/10">
+                    {(profile?.fullName || profile?.name)?.charAt(0) || "U"}
+                  </div>
+                )}
                 <div className="absolute bottom-0 right-0 bg-primary p-2 rounded-full text-on-primary shadow-lg">
                   <span
                     className="material-symbols-outlined text-sm"
@@ -148,12 +154,10 @@ export default function ProfileLayout() {
                 </div>
               </div>
               <h2 className="font-headline font-bold text-xl text-white uppercase tracking-tight">
-                {profile?.fullName}
+                {profile?.fullName || profile?.name}
               </h2>
               <p className="text-on-surface-variant text-sm mt-1">
-                {calculatedPoints >= targetPoints
-                  ? "Premium Director"
-                  : "Thành viên Tiêu chuẩn"}
+                {profile?.rank || "Thành viên Tiêu chuẩn"}
               </p>
             </div>
 
@@ -193,6 +197,24 @@ export default function ProfileLayout() {
                   Lịch sử đặt vé
                 </span>
               </button>
+
+              <button
+                onClick={() => setActiveTab("PAYMENTS")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${activeTab === "PAYMENTS" ? "bg-primary-container text-on-primary-container" : "text-on-surface-variant hover:bg-surface-container-high"}`}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{
+                    fontVariationSettings:
+                      activeTab === "PAYMENTS" ? "'FILL' 1" : "",
+                  }}
+                >
+                  payments
+                </span>
+                <span className="font-label font-bold text-sm uppercase tracking-wider">
+                  Lịch sử thanh toán
+                </span>
+              </button>
             </nav>
           </div>
 
@@ -201,7 +223,7 @@ export default function ProfileLayout() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
             <div className="flex justify-between items-end mb-2 relative z-10">
               <span className="text-xs uppercase font-bold tracking-widest text-primary">
-                Director's Points
+                Membership Points
               </span>
               <span className="text-3xl font-black font-headline text-primary italic drop-shadow-md">
                 {calculatedPoints.toLocaleString("vi-VN")}
@@ -224,7 +246,7 @@ export default function ProfileLayout() {
         {/* ================================== */}
         {/* NỘI DUNG CHÍNH (Đổi tab tự động)   */}
         {/* ================================== */}
-        {activeTab === "INFO" ? (
+        {activeTab === "INFO" && (
           <section className="lg:col-span-9 animate-in fade-in duration-300">
             <h1 className="font-headline font-black text-4xl italic tracking-tighter text-white uppercase mb-10">
               Thông tin cá nhân
@@ -240,9 +262,9 @@ export default function ProfileLayout() {
                     </label>
                     <input
                       required
-                      value={formData.fullName}
+                      value={formData.name}
                       onChange={(e) =>
-                        setFormData({ ...formData, fullName: e.target.value })
+                        setFormData({ ...formData, name: e.target.value })
                       }
                       className="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-white focus:ring-1 focus:ring-primary transition-all font-medium"
                       placeholder="Nhập họ và tên"
@@ -266,9 +288,9 @@ export default function ProfileLayout() {
                     </label>
                     <input
                       required
-                      value={formData.phone}
+                      value={formData.phoneNumber}
                       onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
+                        setFormData({ ...formData, phoneNumber: e.target.value })
                       }
                       className="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-white focus:ring-1 focus:ring-primary transition-all font-medium"
                       placeholder="Nhập số điện thoại"
@@ -281,9 +303,9 @@ export default function ProfileLayout() {
                     </label>
                     <input
                       required
-                      value={formData.dob}
+                      value={formData.birthday}
                       onChange={(e) =>
-                        setFormData({ ...formData, dob: e.target.value })
+                        setFormData({ ...formData, birthday: e.target.value })
                       }
                       className="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-white focus:ring-1 focus:ring-primary transition-all font-medium [color-scheme:dark]"
                       type="date"
@@ -296,26 +318,23 @@ export default function ProfileLayout() {
                     Giới tính
                   </label>
                   <div className="flex flex-wrap gap-8">
-                    {["MALE", "FEMALE", "OTHER"].map((gender) => (
+                    {["M", "F"].map((gender) => (
                       <label
                         key={gender}
                         className="flex items-center gap-3 cursor-pointer group"
                       >
                         <input
                           type="radio"
+                          name="gender"
                           value={gender}
-                          checked={formData.gender === gender}
+                          checked={formData.sex === gender}
                           onChange={(e) =>
-                            setFormData({ ...formData, gender: e.target.value })
+                            setFormData({ ...formData, sex: e.target.value as any })
                           }
-                          className="w-5 h-5 text-primary bg-surface-container-high border-none focus:ring-offset-0 focus:ring-1 focus:ring-primary"
+                          className="w-4 h-4 text-primary bg-surface-container-high border-none focus:ring-primary"
                         />
                         <span className="text-sm font-bold text-on-surface-variant group-hover:text-white transition-colors">
-                          {gender === "MALE"
-                            ? "Nam"
-                            : gender === "FEMALE"
-                              ? "Nữ"
-                              : "Khác"}
+                          {gender === "M" ? "Nam" : "Nữ"}
                         </span>
                       </label>
                     ))}
@@ -400,9 +419,9 @@ export default function ProfileLayout() {
               </div>
             </form>
           </section>
-        ) : (
-          <TicketHistory />
         )}
+        {activeTab === "HISTORY" && <TicketHistory />}
+        {activeTab === "PAYMENTS" && <PaymentHistory />}
       </div>
     </main>
   );

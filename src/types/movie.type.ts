@@ -26,6 +26,8 @@ export interface Movie {
   actors: Actor[];
   formats: Format[];
   slug: string;
+  avgRating: number;
+  reviewCount: number;
 }
 
 export interface Showtime {
@@ -39,5 +41,20 @@ export interface Showtime {
   branchId: number;
   branchName: string;
   roomId: number;
+  rType: string;
+  rPrice: number;
   status: string; // SCHEDULED, ONGOING...
+}
+export interface ReviewResponse {
+  customerName: string;
+  customerAvatar: string | null;
+  rating: number;
+  comment: string;
+  reviewDate: string;
+}
+
+export interface ReviewRequest {
+  movieId: number;
+  rating: number;
+  comment: string;
 }

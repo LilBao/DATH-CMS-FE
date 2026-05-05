@@ -11,7 +11,7 @@ export interface RegisterPayload {
   fullName: string;
   phone: string;
   dob: string; // Định dạng YYYY-MM-DD
-  gender: string; // MALE, FEMALE, OTHER
+  gender: string; // M, F
 }
 
 export interface User {

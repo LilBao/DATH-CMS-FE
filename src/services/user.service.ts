@@ -14,7 +14,7 @@ export const userService = {
 
   // Cập nhật thông tin cá nhân
   updateProfile: (data: UpdateProfilePayload) => {
-    return api.put<any, ApiResponse<UserProfile>>("/users/profile", data);
+    return api.put<any, ApiResponse<UserProfile>>("/customers/me", data);
   },
 
   // Đổi mật khẩu

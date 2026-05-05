@@ -2,6 +2,7 @@ import React from "react";
 import {
   MovieHeroSection,
   MovieShowTimesSection,
+  MovieReviewSection,
 } from "@/src/features/movie-detail";
 
 export default async function MovieDetailPage({
@@ -14,6 +15,7 @@ export default async function MovieDetailPage({
     <main className="relative w-full pt-20">
       <MovieHeroSection slug={slug} />
       <MovieShowTimesSection slug={slug} />
+      <MovieReviewSection slug={slug} />
     </main>
   );
 }

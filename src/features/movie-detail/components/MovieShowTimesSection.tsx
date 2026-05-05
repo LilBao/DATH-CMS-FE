@@ -205,7 +205,12 @@ export default function MovieShowTimesSection({ slug }: Props) {
                           : "bg-surface-container-high text-white border border-white/5 hover:bg-primary hover:text-on-primary"
                         }`}
                     >
-                      {timeString}
+                      <div className="flex flex-col items-center">
+                        <span>{timeString}</span>
+                        <span className="text-[9px] opacity-60 font-medium tracking-tighter mt-0.5">
+                          {st.rPrice.toLocaleString("vi-VN")}đ
+                        </span>
+                      </div>
                     </button>
                   );
                 })}

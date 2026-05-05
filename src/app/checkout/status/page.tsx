@@ -28,7 +28,7 @@ function PaymentStatusContent() {
               Thanh Toán Thành Công!
             </h1>
             <p className="text-on-surface-variant text-sm mb-8 leading-relaxed">
-              Cảm ơn bạn đã tin tưởng Director’s Cut. <br />
+              Cảm ơn bạn đã tin tưởng Cinema CMS. <br />
               Đơn hàng <span className="text-primary font-bold">#{orderId}</span> của bạn đã được xác nhận.
             </p>
           </>

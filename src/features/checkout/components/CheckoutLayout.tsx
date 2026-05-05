@@ -519,7 +519,7 @@ export default function CheckoutLayout() {
               TÓM TẮT ĐƠN HÀNG
             </h2>
             <p className="text-xs text-primary font-bold text-center uppercase tracking-[0.3em] mb-6">
-              Director’s Cut
+              Cinema CMS
             </p>
 
             <div className="space-y-4 text-sm mb-8 border-b border-white/10 pb-8 text-on-surface-variant">

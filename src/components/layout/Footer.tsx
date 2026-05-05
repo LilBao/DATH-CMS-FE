@@ -84,7 +84,7 @@ export default function Footer() {
               Giờ làm việc: 8:00 - 22:00
             </p>
             <p className="font-body text-xs text-[#e5e2e1]/40">
-              Email: support@directorscut.vn
+              Email: support@cmsscut.vn
             </p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function Footer() {
           <div className="flex flex-col space-y-4">
             <div className="pt-4">
               <p className="text-[10px] text-[#e5e2e1]/30">
-                © 2024 CMS. All Rights Reserved. High-End
+                © 2026 CMS. All Rights Reserved. High-End
                 Editorial Experience.
               </p>
             </div>

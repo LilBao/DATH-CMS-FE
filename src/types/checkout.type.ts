@@ -72,3 +72,13 @@ export interface PaymentResponse {
   message: string;
   status: string;
 }
+
+export interface PaymentDetailResponse {
+  paymentId: number;
+  orderId: number;
+  transactionId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  paymentTime: string;
+}

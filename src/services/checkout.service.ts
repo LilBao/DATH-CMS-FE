@@ -1,6 +1,6 @@
 import api from "./api";
 import { ApiResponse } from "../types/auth.type";
-import { FoodDrink, OrderRequest, OrderResponse, Coupon, Merchandise, PaymentRequest, PaymentResponse } from "../types/checkout.type";
+import { FoodDrink, OrderRequest, OrderResponse, Coupon, Merchandise, PaymentRequest, PaymentResponse, PaymentDetailResponse } from "../types/checkout.type";
 import { toast } from "sonner";
 
 export const checkoutService = {
@@ -67,5 +67,15 @@ export const checkoutService = {
       console.error("SSE error:", err);
       eventSource.close();
     };
+  },
+
+  // 9. Lấy lịch sử thanh toán
+  getPaymentHistory: () => {
+    return api.get<any, ApiResponse<PaymentDetailResponse[]>>("/payments/me");
+  },
+
+  // 10. Lấy thông tin thanh toán theo mã đơn hàng
+  getPaymentByOrderId: (orderId: number) => {
+    return api.get<any, ApiResponse<PaymentDetailResponse>>(`/payments/order/${orderId}`);
   },
 };

@@ -19,7 +19,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Cinema Director's Cut",
+  title: "Cinema CMS Cut",
   description: "Trải nghiệm điện ảnh thượng lưu",
 };
 

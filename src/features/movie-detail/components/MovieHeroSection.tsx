@@ -11,6 +11,18 @@ interface Props {
 export default function MovieHeroSection({ slug }: Props) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTrailer, setShowTrailer] = useState(false);
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return "";
+    let videoId = "";
+    if (url.includes("v=")) {
+      videoId = url.split("v=")[1].split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1].split("?")[0];
+    }
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  };
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -138,18 +150,49 @@ export default function MovieHeroSection({ slug }: Props) {
                 Mua Vé
               </a>
               {movie.trailerUrl && (
-                <a
-                  href={movie.trailerUrl}
-                  target="_blank"
-                  className="bg-surface-container-high/50 backdrop-blur-md text-white px-10 py-4 rounded-full font-label font-bold text-sm uppercase tracking-widest border border-white/10 hover:bg-surface-container-highest transition-all"
+                <button
+                  onClick={() => setShowTrailer(true)}
+                  className="bg-surface-container-high/50 backdrop-blur-md text-white px-10 py-4 rounded-full font-label font-bold text-sm uppercase tracking-widest border border-white/10 hover:bg-surface-container-highest transition-all cursor-pointer"
                 >
                   Trailer
-                </a>
+                </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Trailer Modal */}
+      {showTrailer && movie.trailerUrl && (
+        <div
+          onClick={() => setShowTrailer(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 animate-in fade-in duration-300 cursor-pointer"
+        >
+          <button
+            onClick={() => setShowTrailer(false)}
+            className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors group z-10"
+          >
+            <span className="material-symbols-outlined text-4xl group-hover:rotate-90 transition-transform">
+              close
+            </span>
+          </button>
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(245,201,72,0.15)] border border-white/5 cursor-default"
+          >
+            <iframe
+              width="100%"
+              height="100%"
+              src={getEmbedUrl(movie.trailerUrl)}
+              title="Movie Trailer"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
