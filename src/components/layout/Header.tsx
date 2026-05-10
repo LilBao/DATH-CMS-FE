@@ -2,15 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getAccessToken, removeTokens } from "@/src/lib/token";
 import { authService } from "@/src/services/auth.service";
-import { User } from "@/src/types/auth.type";
+import { useUserStore } from "@/src/store/userStore";
+import { UserProfile } from "@/src/types/user.type";
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const user = useUserStore((state) => state.user);
+  const setUser = useUserStore((state) => state.setUser);
+  const clearUser = useUserStore((state) => state.clearUser);
 
   // Kiểm tra đăng nhập khi Component được mount
   useEffect(() => {
@@ -18,27 +22,36 @@ export default function Header() {
 
     const fetchUser = async () => {
       const token = getAccessToken();
-      if (!token) return;
+      if (!token) {
+        clearUser();
+        return;
+      }
 
       try {
         const response = await authService.getMe();
         if (response.success && response.data) {
-          setUser(response.data);
+          setUser(response.data as unknown as UserProfile);
         } else {
           removeTokens();
+          clearUser();
         }
       } catch (error) {
         console.error("Lỗi xác thực:", error);
-        removeTokens();
+        // Chỉ clear nếu thực sự lỗi 401 hoặc token không hợp lệ
+        // Tránh clear khi lỗi mạng tạm thời
+        if ((error as any)?.status === 401) {
+          removeTokens();
+          clearUser();
+        }
       }
     };
 
     fetchUser();
-  }, []);
+  }, [pathname, setUser, clearUser]); // Chạy lại khi chuyển trang
 
   const handleLogout = () => {
     removeTokens();
-    setUser(null);
+    clearUser();
     router.push("/login");
   };
 
@@ -49,7 +62,7 @@ export default function Header() {
         href="/"
         className="text-2xl font-black text-[#f5c948] tracking-tighter italic"
       >
-        CINEMA DIRECTOR’S CUT
+        CMS
       </Link>
 
       {/* 2. Menu Điều Hướng */}
@@ -61,14 +74,20 @@ export default function Header() {
           Phim
         </Link>
         <Link
-          className="font-headline tracking-widest uppercase text-sm font-bold text-[#e5e2e1] hover:text-[#f5c948] transition-colors"
-          href="#"
+          className={`font-headline tracking-widest uppercase text-sm font-bold transition-colors ${pathname === "/cinemas"
+              ? "text-primary border-b-2 border-primary pb-1"
+              : "text-[#e5e2e1] hover:text-primary"
+            }`}
+          href="/cinemas"
         >
-          Rạp
+          Hệ thống Rạp Phim
         </Link>
         <Link
-          className="font-headline tracking-widest uppercase text-sm font-bold text-[#e5e2e1] hover:text-[#f5c948] transition-colors"
-          href="#"
+          className={`font-headline tracking-widest uppercase text-sm font-bold transition-colors ${pathname === "/promotions"
+              ? "text-primary border-b-2 border-primary pb-1"
+              : "text-[#e5e2e1] hover:text-primary"
+            }`}
+          href="/promotions"
         >
           Khuyến mãi
         </Link>
@@ -111,7 +130,7 @@ export default function Header() {
                   account_circle
                 </span>
                 <span className="font-label text-sm font-bold text-white max-w-[100px] truncate">
-                  {user.fullName}
+                  {user.fullName || user.name}
                 </span>
                 <span className="material-symbols-outlined text-on-surface-variant text-sm group-hover:rotate-180 transition-transform">
                   expand_more
@@ -128,6 +147,16 @@ export default function Header() {
                     {user.email}
                   </p>
                 </div>
+
+                <Link
+                  href="/profile"
+                  className="px-4 py-3 text-sm text-white hover:bg-primary/10 hover:text-primary flex items-center gap-3 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    account_circle
+                  </span>{" "}
+                  Hồ sơ của tôi
+                </Link>
 
                 <Link
                   href="/history"

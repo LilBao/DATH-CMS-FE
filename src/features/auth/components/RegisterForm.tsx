@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/src/services/auth.service";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function RegisterForm() {
     confirmPassword: "",
     phone: "",
     dob: "",
-    gender: "MALE",
+    gender: "M",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,13 +40,13 @@ export default function RegisterForm() {
       const response = await authService.register(payload);
 
       if (response && response.success !== false) {
-        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
         router.push("/login");
       }
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
-          "Lỗi đăng ký. Vui lòng kiểm tra lại thông tin.",
+        "Lỗi đăng ký. Vui lòng kiểm tra lại thông tin.",
       );
     } finally {
       setIsLoading(false);
@@ -59,7 +60,7 @@ export default function RegisterForm() {
           Đăng Ký Thành Viên
         </h2>
         <p className="text-on-surface-variant text-sm mt-2">
-          Nhận ngay ưu đãi đặc quyền từ Director's Club
+          Nhận ngay ưu đãi đặc quyền từ Cinema CMS
         </p>
       </div>
 
@@ -167,9 +168,8 @@ export default function RegisterForm() {
               onChange={handleChange}
               className="w-1/3 bg-surface-container-high border border-white/5 rounded-xl px-2 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             >
-              <option value="MALE">Nam</option>
-              <option value="FEMALE">Nữ</option>
-              <option value="OTHER">Khác</option>
+              <option value="M">Nam</option>
+              <option value="F">Nữ</option>
             </select>
           </div>
         </div>

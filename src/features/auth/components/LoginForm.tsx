@@ -4,12 +4,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/src/services/auth.service";
 import { setTokens } from "@/src/lib/token";
+import { useUserStore } from "@/src/store/userStore";
+import { UserProfile } from "@/src/types/user.type";
 import Link from "next/link";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { setUser } = useUserStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [provider, setProvider] = useState("LOCAL");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,10 +23,11 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password, provider });
 
       if (response && response.data && response.data.accessToken) {
         setTokens(response.data.accessToken, response.data.refreshToken);
+        setUser(response.data.user as unknown as UserProfile);
         router.push("/");
         router.refresh();
       } else {

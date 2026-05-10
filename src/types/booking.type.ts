@@ -1,19 +1,40 @@
 export type SeatType = "STANDARD" | "VIP" | "SWEETBOX";
 
 export interface Seat {
-  seatId: number;
+  sRow: number;
+  branchId?: number;
+  roomId?: number;
+  sColumn: number;
   rowName: string; // VD: 'A', 'B'
   number: string; // VD: '1', '2'
-  type: SeatType;
-  isBooked: boolean; // Trạng thái đã bán hay chưa (dựa vào bảng Ticket trong BE)
-  price: number;
+  sType: number; // Mapping from BE
+  sStatus: boolean; // Trạng thái ghế (hoạt động/không)
+  isBooked: boolean;
+  sPrice: number; // New price field from BE
+}
+
+export interface ScreenRoom {
+  branchId: number;
+  roomId: number;
+  rType: string;
+  rCapacity: number;
+  basePrice: number;
+  totalSeats: number;
 }
 
 export interface ShowtimeDetails {
   timeId: number;
+  movieId: number;
   movieName: string;
+  branchId: number;
   branchName: string;
-  roomName: string;
-  startTime: string; // HH:mm
-  date: string; // DD/MM/YYYY
+  roomId: number;
+  rType: string;
+  rPrice: number;
+  formatName: string;
+  day: string; // "YYYY-MM-DD"
+  date?: string; // Legacy field
+  startTime: string; // HH:mm:ss
+  endTime: string;
+  status: string;
 }

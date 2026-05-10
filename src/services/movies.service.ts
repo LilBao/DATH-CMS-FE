@@ -8,21 +8,20 @@ export const movieService = {
     return api.get<any, ApiResponse<Movie[]>>("/movies/now-showing");
   },
 
-  // 2. Phim sắp chiếu (COMING SOON) - ĐÂY LÀ HÀM BẠN BỊ THIẾU
+  // 2. Phim sắp chiếu (COMING SOON)
   getComingSoon: () => {
-    // Tạm giả định API là /movies/coming-soon (bạn có thể đổi lại cho khớp với BE thật)
     return api.get<any, ApiResponse<Movie[]>>("/movies/coming-soon");
   },
 
   // 3. Lấy chi tiết 1 bộ phim
-  getMovieById: (movieId: number | string) => {
-    return api.get<any, ApiResponse<Movie>>(`/movies/${movieId}`);
+  getMovieBySlug: (slug: string) => {
+    return api.get<any, ApiResponse<Movie>>(`/movies/slug/${slug}`);
   },
 
   // 4. Lấy lịch chiếu của 1 bộ phim
-  getMovieShowtimes: (movieId: number | string) => {
+  getMovieShowtimes: (slug: string) => {
     return api.get<any, ApiResponse<Showtime[]>>(
-      `/movies/${movieId}/showtimes`,
+      `/showtimes/movie/${slug}`,
     );
   },
 };

@@ -25,6 +25,9 @@ export interface Movie {
   genres: Genre[];
   actors: Actor[];
   formats: Format[];
+  slug: string;
+  avgRating: number;
+  reviewCount: number;
 }
 
 export interface Showtime {
@@ -32,15 +35,26 @@ export interface Showtime {
   day: string; // "YYYY-MM-DD"
   startTime: string; // "HH:mm:ss"
   endTime: string;
-  format: Format;
-  // Giả định BE trả về object thông tin chi nhánh
-  screenRoom: {
-    roomId: number;
-    roomName: string;
-    branch: {
-      branchId: number;
-      bName: string;
-    };
-  };
+  formatName: string;
+  movieId: number;
+  movieName: string;
+  branchId: number;
+  branchName: string;
+  roomId: number;
+  rType: string;
+  rPrice: number;
   status: string; // SCHEDULED, ONGOING...
+}
+export interface ReviewResponse {
+  customerName: string;
+  customerAvatar: string | null;
+  rating: number;
+  comment: string;
+  reviewDate: string;
+}
+
+export interface ReviewRequest {
+  movieId: number;
+  rating: number;
+  comment: string;
 }

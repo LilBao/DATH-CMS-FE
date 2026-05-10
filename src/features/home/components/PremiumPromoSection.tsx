@@ -13,7 +13,7 @@ export default function PremiumPromoSection() {
           />
           <div className="relative z-10 space-y-4">
             <h3 className="text-5xl font-headline font-black text-primary tracking-tighter italic uppercase">
-              DIRECTOR'S CLUB
+              CINEMA CMS
             </h3>
             <p className="text-on-surface-variant max-w-md text-lg">
               Trải nghiệm xem phim đẳng cấp 5 sao với ghế da chỉnh điện, phục vụ

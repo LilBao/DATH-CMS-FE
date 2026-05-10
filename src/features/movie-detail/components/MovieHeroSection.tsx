@@ -5,17 +5,29 @@ import { movieService } from "@/src/services/movies.service";
 import { Movie } from "@/src/types/movie.type";
 
 interface Props {
-  movieId: string;
+  slug: string;
 }
 
-export default function MovieHeroSection({ movieId }: Props) {
+export default function MovieHeroSection({ slug }: Props) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTrailer, setShowTrailer] = useState(false);
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return "";
+    let videoId = "";
+    if (url.includes("v=")) {
+      videoId = url.split("v=")[1].split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1].split("?")[0];
+    }
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  };
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const res = await movieService.getMovieById(movieId);
+        const res = await movieService.getMovieBySlug(slug);
         if (res.success) setMovie(res.data);
       } catch (error) {
         console.error("Lỗi tải chi tiết phim:", error);
@@ -24,7 +36,7 @@ export default function MovieHeroSection({ movieId }: Props) {
       }
     };
     fetchMovie();
-  }, [movieId]);
+  }, [slug]);
 
   if (loading)
     return (
@@ -43,7 +55,7 @@ export default function MovieHeroSection({ movieId }: Props) {
         <img
           alt={movie.mName}
           className="w-full h-full object-cover opacity-40 scale-105 blur-sm"
-          src={movie.posterUrl || "https://i.ibb.co/3pQG6qX/vip-cinema.jpg"}
+          src={movie.posterUrl || "https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#131313] from-0% via-[#131313]/80 via-50% to-[#131313]/40 to-100%"></div>
       </div>
@@ -56,7 +68,7 @@ export default function MovieHeroSection({ movieId }: Props) {
                 alt={movie.mName}
                 className="w-full h-full object-cover"
                 src={
-                  movie.posterUrl || "https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
+                  movie.posterUrl || "https://wallpapers.com/images/hd/netflix-background-gs7hjuwvv2g0e9fj.jpg"
                 }
               />
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 cursor-pointer">
@@ -106,10 +118,7 @@ export default function MovieHeroSection({ movieId }: Props) {
                   Diễn viên
                 </p>
                 <p className="text-sm font-semibold text-white">
-                  {movie.actors
-                    ?.slice(0, 3)
-                    .map((a) => a.fullName)
-                    .join(", ") || "Đang cập nhật..."}
+                  {movie?.actors.join(", ") || "Đang cập nhật..."}
                 </p>
               </div>
               <div className="space-y-1">
@@ -141,18 +150,49 @@ export default function MovieHeroSection({ movieId }: Props) {
                 Mua Vé
               </a>
               {movie.trailerUrl && (
-                <a
-                  href={movie.trailerUrl}
-                  target="_blank"
-                  className="bg-surface-container-high/50 backdrop-blur-md text-white px-10 py-4 rounded-full font-label font-bold text-sm uppercase tracking-widest border border-white/10 hover:bg-surface-container-highest transition-all"
+                <button
+                  onClick={() => setShowTrailer(true)}
+                  className="bg-surface-container-high/50 backdrop-blur-md text-white px-10 py-4 rounded-full font-label font-bold text-sm uppercase tracking-widest border border-white/10 hover:bg-surface-container-highest transition-all cursor-pointer"
                 >
                   Trailer
-                </a>
+                </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Trailer Modal */}
+      {showTrailer && movie.trailerUrl && (
+        <div
+          onClick={() => setShowTrailer(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 animate-in fade-in duration-300 cursor-pointer"
+        >
+          <button
+            onClick={() => setShowTrailer(false)}
+            className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors group z-10"
+          >
+            <span className="material-symbols-outlined text-4xl group-hover:rotate-90 transition-transform">
+              close
+            </span>
+          </button>
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(245,201,72,0.15)] border border-white/5 cursor-default"
+          >
+            <iframe
+              width="100%"
+              height="100%"
+              src={getEmbedUrl(movie.trailerUrl)}
+              title="Movie Trailer"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
