@@ -159,7 +159,7 @@ export default function CinemaDetails({ cinema }: { cinema: BranchResponse | nul
             {movies.map((movie) => (
               <Link
                 key={movie.movieId}
-                href={`/movies/${movie.slug}`}
+                href={`/movie/${movie.slug}`}
                 className="group relative aspect-[2/3] rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all"
               >
                 <img
