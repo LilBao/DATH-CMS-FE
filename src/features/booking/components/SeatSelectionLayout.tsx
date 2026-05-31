@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { bookingService } from "@/src/services/booking.service";
 import { seatWsService } from "@/src/services/seatWebSocket.service";
@@ -17,6 +17,11 @@ export default function SeatSelectionLayout({ timeId }: Props) {
   const [showtime, setShowtime] = useState<ShowtimeDetails | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Countdown timer (10 phút = 600 giây)
+  const COUNTDOWN_SECONDS = 600;
+  const [timeLeft, setTimeLeft] = useState(COUNTDOWN_SECONDS);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // State lưu ghế user đang chọn
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
@@ -95,6 +100,33 @@ export default function SeatSelectionLayout({ timeId }: Props) {
     };
   }, [timeId]);
 
+
+  // Khởi động countdown timer khi dữ liệu load xong
+  useEffect(() => {
+    if (!loading) {
+      setTimeLeft(COUNTDOWN_SECONDS);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            // Hết giờ → quay lại
+            router.back();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [loading]);
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   // Hàm xử lý khi bấm vào 1 ghế
   const handleToggleSeat = (seat: Seat) => {
@@ -186,13 +218,17 @@ export default function SeatSelectionLayout({ timeId }: Props) {
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-[10px] text-on-surface-variant uppercase tracking-tighter">
-              Thời gian
+              Thời gian giữ ghế
             </span>
-            <span className="text-primary font-headline font-extrabold text-xl">
-              10:00
+            <span className={`font-headline font-extrabold text-xl ${
+              timeLeft <= 60 ? 'text-red-500 animate-pulse' : timeLeft <= 180 ? 'text-orange-400' : 'text-primary'
+            }`}>
+              {formatCountdown(timeLeft)}
             </span>
           </div>
-          <span className="material-symbols-outlined text-primary scale-125">
+          <span className={`material-symbols-outlined scale-125 ${
+            timeLeft <= 60 ? 'text-red-500' : timeLeft <= 180 ? 'text-orange-400' : 'text-primary'
+          }`}>
             timer
           </span>
         </div>
