@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { bookingService } from "@/src/services/booking.service";
+import { seatWsService } from "@/src/services/seatWebSocket.service";
 import { Seat, ShowtimeDetails, SeatType } from "@/src/types/booking.type";
+import { SeatStatusMessage } from "@/src/types/websocket.type";
 
 interface Props {
   timeId: string;
@@ -16,9 +18,18 @@ export default function SeatSelectionLayout({ timeId }: Props) {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Countdown timer (10 phút = 600 giây)
+  const COUNTDOWN_SECONDS = 600;
+  const [timeLeft, setTimeLeft] = useState(COUNTDOWN_SECONDS);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   // State lưu ghế user đang chọn
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
+  // Ghế đang bị người KHÁC lock (key: "sRow-sColumn")
+  const [lockedByOthers, setLockedByOthers] = useState<Set<string>>(new Set());
+
+  // Fetch REST data
   useEffect(() => {
     const fetchBookingData = async () => {
       try {
@@ -65,23 +76,83 @@ export default function SeatSelectionLayout({ timeId }: Props) {
     fetchBookingData();
   }, [timeId]);
 
+  // Kết nối WebSocket và subscribe topic ghế của suất chiếu
+  useEffect(() => {
+    const numericTimeId = parseInt(timeId, 10);
+    if (isNaN(numericTimeId)) return;
+
+    seatWsService.connect(numericTimeId, (msg: SeatStatusMessage) => {
+      const key = `${msg.sRow}-${msg.sColumn}`;
+      setLockedByOthers((prev) => {
+        const next = new Set(prev);
+        if (msg.status === "LOCKED") {
+          next.add(key);
+        } else {
+          next.delete(key);
+        }
+        return next;
+      });
+    });
+
+    // Cleanup: disconnect khi rời trang (auto-unlock phía server)
+    return () => {
+      seatWsService.disconnect();
+    };
+  }, [timeId]);
+
+
+  // Khởi động countdown timer khi dữ liệu load xong
+  useEffect(() => {
+    if (!loading) {
+      setTimeLeft(COUNTDOWN_SECONDS);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            // Hết giờ → quay lại
+            router.back();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [loading]);
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   // Hàm xử lý khi bấm vào 1 ghế
   const handleToggleSeat = (seat: Seat) => {
     if (seat.isBooked || seat.sStatus === false) return; // Không cho click ghế đã bán hoặc bị hỏng
 
+    const seatKey = `${seat.sRow}-${seat.sColumn}`;
+    // Không cho click ghế đang bị người khác lock
+    if (lockedByOthers.has(seatKey)) return;
+
+    const numericTimeId = parseInt(timeId, 10);
     const existingIndex = selectedSeats.findIndex(
       (s) => s.sRow === seat.sRow && s.sColumn === seat.sColumn,
     );
     if (existingIndex >= 0) {
-      // Bỏ chọn
+      // Bỏ chọn → gửi UNLOCK
       const newSeats = [...selectedSeats];
       newSeats.splice(existingIndex, 1);
       setSelectedSeats(newSeats);
+      seatWsService.unlockSeat(numericTimeId, seat.sRow, seat.sColumn);
     } else {
-      // Thêm mới
+      // Thêm mới → gửi LOCK
       setSelectedSeats([...selectedSeats, seat]);
+      seatWsService.lockSeat(numericTimeId, seat.sRow, seat.sColumn);
     }
   };
+
 
   // Hàm chuyển sang trang thanh toán
   const handleContinue = () => {
@@ -147,13 +218,17 @@ export default function SeatSelectionLayout({ timeId }: Props) {
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-[10px] text-on-surface-variant uppercase tracking-tighter">
-              Thời gian
+              Thời gian giữ ghế
             </span>
-            <span className="text-primary font-headline font-extrabold text-xl">
-              10:00
+            <span className={`font-headline font-extrabold text-xl ${
+              timeLeft <= 60 ? 'text-red-500 animate-pulse' : timeLeft <= 180 ? 'text-orange-400' : 'text-primary'
+            }`}>
+              {formatCountdown(timeLeft)}
             </span>
           </div>
-          <span className="material-symbols-outlined text-primary scale-125">
+          <span className={`material-symbols-outlined scale-125 ${
+            timeLeft <= 60 ? 'text-red-500' : timeLeft <= 180 ? 'text-orange-400' : 'text-primary'
+          }`}>
             timer
           </span>
         </div>
@@ -196,6 +271,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                           (s) =>
                             s.sRow === seat.sRow && s.sColumn === seat.sColumn,
                         );
+                        const isLockedByOther = lockedByOthers.has(`${seat.sRow}-${seat.sColumn}`);
                         const isVIP = seat.sType === 3;
                         const isSweetbox = seat.sType === 2;
 
@@ -208,25 +284,28 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                           <React.Fragment key={`${seat.sRow}-${seat.sColumn}`}>
                             <div
                               onClick={() => handleToggleSeat(seat)}
+                              title={isLockedByOther ? "Ghế đang được người khác chọn" : undefined}
                               className={`
-                            flex items-center justify-center cursor-pointer transition-all
+                            flex items-center justify-center transition-all
                             ${isSweetbox ? "w-20 h-8 rounded-md" : "w-8 h-8 rounded-sm text-[8px]"}
                             ${seat.isBooked || seat.sStatus === false
                                   ? "bg-surface bg-red-500 cursor-not-allowed text-red-500 border border-red-500"
-                                  : isSelected
-                                    ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
-                                    : isSweetbox
-                                      ? "bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40 text-secondary"
-                                      : isVIP
-                                        ? "border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
-                                        : "bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
+                                  : isLockedByOther
+                                    ? "bg-orange-500/30 border border-orange-400/60 cursor-not-allowed text-orange-400 animate-pulse"
+                                    : isSelected
+                                      ? "cursor-pointer bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
+                                      : isSweetbox
+                                        ? "cursor-pointer bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40 text-secondary"
+                                        : isVIP
+                                          ? "cursor-pointer border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
+                                          : "cursor-pointer bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
                                 }
                           `}
                             >
                               {isSweetbox ? (
                                 <div className="flex items-center gap-1">
                                   <span
-                                    className={`text-[8px] font-bold ${isSelected ? "text-on-primary" : "text-secondary/60"}`}
+                                    className={`text-[8px] font-bold ${isLockedByOther ? "text-orange-400" : isSelected ? "text-on-primary" : "text-secondary/60"}`}
                                   >
                                     {seat.rowName}
                                     {seat.number}
@@ -249,6 +328,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                             </div>
                             {/* Thêm khoảng trống lối đi nếu thoả điều kiện */}
                             {isAisle && <div className="w-4"></div>}
+
                           </React.Fragment>
                         );
                       })}
@@ -294,6 +374,12 @@ export default function SeatSelectionLayout({ timeId }: Props) {
             <div className="w-5 h-5 rounded-sm bg-primary shadow-[0_0_10px_rgba(245,201,72,0.4)]"></div>
             <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
               Đang chọn
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm bg-orange-500/30 border border-orange-400/60 animate-pulse"></div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              Đang giữ
             </span>
           </div>
           <div className="flex items-center gap-3">
